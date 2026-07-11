@@ -41,6 +41,7 @@ secret_key="${SECRET_KEY_OPT[2]:-$HOME/.minisign/minisign.key}"
 [[ -f "$secret_key" ]] || { print -u2 -- "secret key not found: $secret_key"; exit 2; }
 command -v minisign >/dev/null || { print -u2 -- "missing: minisign"; exit 1; }
 command -v rsync >/dev/null || { print -u2 -- "missing: rsync"; exit 1; }
+command -v zstd >/dev/null || { print -u2 -- "missing: zstd"; exit 1; }
 
 # fall back to extension.json's "version" field, then a UTC timestamp
 if (( ${#VERSION_OPT} )); then
@@ -83,14 +84,14 @@ rsync --archive \
 
 # --- Tar + sign into place-adjacent tmp files (same filesystem as the ---
 # --- final destination, so the later move is a true atomic rename)    ---
-tar_name="${pkg_name}-${version}.tar.gz"
+tar_name="${pkg_name}-${version}.tar.zst"
 tar_final="$pkg_dir/$tar_name"
 sig_final="$tar_final.minisig"
 tar_tmp="$pkg_dir/.${tar_name}.tmp.$$"
 sig_tmp="$tar_tmp.minisig"
 trap 'rm -rf "$build_dir" "$tar_tmp" "$sig_tmp"' EXIT
 
-tar --create --gzip --file "$tar_tmp" --directory "$build_dir" "$pkg_name"
+tar --create --zstd --file "$tar_tmp" --directory "$build_dir" "$pkg_name"
 
 minisign -S -s "$secret_key" -x "$sig_tmp" -m "$tar_tmp" \
     -t "$pkg_name $version"
@@ -104,7 +105,7 @@ mv -- "$sig_tmp" "$sig_final"
 # --- Swing the "latest" symlink pair ------------------------------------
 # built the same way: symlink into a tmp path, then atomically rename over
 # the previous link so readers never see a dangling or half-updated target
-latest_tar="$pkg_dir/${pkg_name}-latest.tar.gz"
+latest_tar="$pkg_dir/${pkg_name}-latest.tar.zst"
 latest_sig="$latest_tar.minisig"
 latest_tar_tmp="$latest_tar.tmp.$$"
 latest_sig_tmp="$latest_sig.tmp.$$"
