@@ -2,14 +2,39 @@
 # FamilyTreeEditor - publish a signed artifact tarball for a mediawiki extension
 # This file is licensed under the MIT License; See LICENSE for full text.
 #
-# usage: zsh scripts/publish-package.zsh --source-dir <dir> --name <name> --dest-dir <dir> \
-#            [--version <string>] [--secret-key <path>] [--channel {stable,latest}]
+# usage: zsh scripts/publish-package.zsh [--source-dir <dir>] [--name <name>] \
+#            [--dest-dir <dir>] [--version <string>] [--secret-key <path>] \
+#            [--channel {stable,latest}] [--build-cmd <command>]
 #
 # builds a shipping-clean tarball from a mediawiki extension source tree,
 # signs it with minisign, then atomically publishes it (tarball + .minisig +
 # a swung per-channel symlink pair) under <dest-dir>/<name>/. shared between
 # this repo's extension/ and the sibling nova-discord repo - keep both
 # copies identical.
+#
+# --source-dir defaults to "." (wherever the script itself was invoked from)
+# and is the anchor used to locate package.conf - it can never itself be
+# sourced from that file. if <source-dir>/package.conf exists, it's sourced
+# to set PKG_NAME/PKG_BUILD_CMD/PKG_DEST_DIR/PKG_SOURCE_DIR as defaults.
+# --name/--dest-dir/--build-cmd/--source-dir all resolve as: CLI flag if
+# given, else the matching PKG_* conf value, else (for --name/--dest-dir
+# only) a hard error - package.conf supplies convenience defaults, it
+# doesn't remove the requiredness checks. PKG_SOURCE_DIR lets a conf file
+# point at a source subdirectory different from where the conf file itself
+# lives; unused by either current package, whose conf file already lives at
+# its own source root.
+#
+# --build-cmd, if given, runs via eval from wherever the script itself was
+# invoked (not --source-dir) immediately before the rsync staging step -
+# only ever supplied by the trusted local operator on their own command
+# line, never untrusted input. set -eu already aborts the publish on any
+# nonzero exit from it.
+#
+# rsync excludes: '.git' is always excluded, hardcoded, regardless of
+# .pkgignore. if <source-dir>/.pkgignore exists, its gitignore-syntax rules
+# (via rsync's --exclude-from=) decide everything else left out of the
+# tarball; if it doesn't, a small hardcoded safety net (vendor,
+# node_modules, composer.lock) applies instead.
 #
 # --channel selects which floating symlink pair gets swung, stable or
 # latest (default: latest - the safe choice, promoting to stable needs the
@@ -28,23 +53,68 @@ setopt pipefail
 
 # --- Parse args --------------------------------------------------------
 
-typeset -a SOURCE_DIR_OPT NAME_OPT DEST_DIR_OPT VERSION_OPT SECRET_KEY_OPT CHANNEL_OPT
+typeset -a SOURCE_DIR_OPT NAME_OPT DEST_DIR_OPT VERSION_OPT SECRET_KEY_OPT CHANNEL_OPT BUILD_CMD_OPT
 zparseopts -D -E -F -- \
     -source-dir:=SOURCE_DIR_OPT \
     -name:=NAME_OPT \
     -dest-dir:=DEST_DIR_OPT \
     -version:=VERSION_OPT \
     -secret-key:=SECRET_KEY_OPT \
-    -channel:=CHANNEL_OPT
+    -channel:=CHANNEL_OPT \
+    -build-cmd:=BUILD_CMD_OPT
 
-if (( ! ${#SOURCE_DIR_OPT} || ! ${#NAME_OPT} || ! ${#DEST_DIR_OPT} )); then
-    print -u2 -- "usage: publish-package.zsh --source-dir <dir> --name <name> --dest-dir <dir> [--version <string>] [--secret-key <path>] [--channel {stable,latest}]"
+# --- Resolve source_dir anchor, then package.conf, then everything else ---
+# anchor_dir is the directory that locates package.conf: --source-dir if
+# given, else "." (wherever the script was invoked from). this one value
+# genuinely can't come from package.conf itself.
+if (( ${#SOURCE_DIR_OPT} )); then
+    anchor_dir="${SOURCE_DIR_OPT[2]:A}"
+else
+    anchor_dir="${PWD:A}"
+fi
+[[ -d "$anchor_dir" ]] || { print -u2 -- "source dir not found: $anchor_dir"; exit 2; }
+
+PKG_NAME="" PKG_BUILD_CMD="" PKG_DEST_DIR="" PKG_SOURCE_DIR=""
+if [[ -f "$anchor_dir/package.conf" ]]; then
+    source "$anchor_dir/package.conf"
+fi
+
+# effective source_dir (used for the clean-tree gate, version detection,
+# and rsync staging): --source-dir flag if given (same as anchor_dir in
+# that case), else PKG_SOURCE_DIR from the conf file, else the anchor
+if (( ${#SOURCE_DIR_OPT} )); then
+    source_dir="$anchor_dir"
+elif [[ -n "$PKG_SOURCE_DIR" ]]; then
+    source_dir="${PKG_SOURCE_DIR:A}"
+else
+    source_dir="$anchor_dir"
+fi
+[[ -d "$source_dir" ]] || { print -u2 -- "source dir not found: $source_dir"; exit 2; }
+
+if (( ${#NAME_OPT} )); then
+    pkg_name="${NAME_OPT[2]}"
+elif [[ -n "$PKG_NAME" ]]; then
+    pkg_name="$PKG_NAME"
+else
+    print -u2 -- "missing --name (or PKG_NAME in $anchor_dir/package.conf)"
     exit 2
 fi
 
-source_dir="${SOURCE_DIR_OPT[2]:A}"
-pkg_name="${NAME_OPT[2]}"
-dest_dir="${DEST_DIR_OPT[2]:A}"
+if (( ${#DEST_DIR_OPT} )); then
+    dest_dir="${DEST_DIR_OPT[2]:A}"
+elif [[ -n "$PKG_DEST_DIR" ]]; then
+    dest_dir="${PKG_DEST_DIR:A}"
+else
+    print -u2 -- "missing --dest-dir (or PKG_DEST_DIR in $anchor_dir/package.conf)"
+    exit 2
+fi
+
+if (( ${#BUILD_CMD_OPT} )); then
+    build_cmd="${BUILD_CMD_OPT[2]}"
+else
+    build_cmd="${PKG_BUILD_CMD:-}"
+fi
+
 secret_key="${SECRET_KEY_OPT[2]:-$HOME/.minisign/minisign.key}"
 channel="${CHANNEL_OPT[2]:-latest}"
 
@@ -56,7 +126,6 @@ case "$channel" in
         ;;
 esac
 
-[[ -d "$source_dir" ]] || { print -u2 -- "source dir not found: $source_dir"; exit 2; }
 [[ -f "$secret_key" ]] || { print -u2 -- "secret key not found: $secret_key"; exit 2; }
 command -v minisign >/dev/null || { print -u2 -- "missing: minisign"; exit 1; }
 command -v rsync >/dev/null || { print -u2 -- "missing: rsync"; exit 1; }
@@ -102,28 +171,36 @@ mkdir -p "$pkg_dir"
 
 print -P "%F{cyan}[publish]%f $pkg_name $version <- $source_dir"
 
+# --- Optional build step ------------------------------------------------
+# runs from the invoking shell's cwd, not $source_dir - e.g.
+# `pnpm -F wiki-editor build` needs pnpm workspace context, not the
+# extension subdirectory. runs after the clean-tree gate above and
+# immediately before the rsync staging step below, so freshly-built
+# output is always what gets staged.
+if [[ -n "$build_cmd" ]]; then
+    print -P "%F{cyan}[publish]%f running build command: $build_cmd"
+    eval "$build_cmd"
+fi
+
 # --- Build: stage a shipping-clean copy of the source tree -------------
-# excludes vcs/dev/test cruft that shouldn't reach a release tarball:
-#   .git            - vcs metadata, never shipped
-#   vendor          - composer install output, rebuilt by the consumer
-#   node_modules    - never present for these php-only extensions, excluded defensively
-#   composer.lock   - lockfile is dev/CI-time, not a runtime artifact
-#   .dev/           - this repo's local docker dev-stack scaffolding
-#   .phan/          - static-analysis config, dev-time only
-#   tests/          - phpunit fixtures/suites, judged non-shipping for a production install
+# .git is always excluded, hardcoded, regardless of .pkgignore presence.
+# if $source_dir/.pkgignore exists, its gitignore-syntax rules (via
+# rsync's --exclude-from=) decide everything else the tarball leaves out;
+# if it doesn't, fall back to a minimal hardcoded safety net so a source
+# dir without a .pkgignore yet still doesn't ship git internals or
+# dependency trees.
 build_dir="$(mktemp -d)"
 trap 'rm -rf "$build_dir"' EXIT
 
 stage_dir="$build_dir/$pkg_name"
-rsync --archive \
-    --exclude='.git' \
-    --exclude='vendor' \
-    --exclude='node_modules' \
-    --exclude='composer.lock' \
-    --exclude='.dev' \
-    --exclude='.phan' \
-    --exclude='tests' \
-    "$source_dir/" "$stage_dir/"
+typeset -a rsync_excludes
+rsync_excludes=(--exclude='.git')
+if [[ -f "$source_dir/.pkgignore" ]]; then
+    rsync_excludes+=(--exclude-from="$source_dir/.pkgignore")
+else
+    rsync_excludes+=(--exclude='vendor' --exclude='node_modules' --exclude='composer.lock')
+fi
+rsync --archive "${rsync_excludes[@]}" "$source_dir/" "$stage_dir/"
 
 # --- Tar + sign into place-adjacent tmp files (same filesystem as the ---
 # --- final destination, so the later move is a true atomic rename)    ---
