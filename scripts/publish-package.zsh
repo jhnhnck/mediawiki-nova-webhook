@@ -139,7 +139,7 @@ command -v git >/dev/null || { print -u2 -- "missing: git"; exit 1; }
 # this entirely - a dev-build channel needs to stay usable while iterating
 # on uncommitted local changes
 if [[ "$channel" == "stable" ]]; then
-    dirty_lines=("${(@f)$(git -C "$source_dir" status --porcelain)}")
+    dirty_lines=("${(@f)$(git -C "$source_dir" status --porcelain -- .)}")
     dirty_tracked=()
     for line in "${dirty_lines[@]}"; do
         [[ -z "$line" ]] && continue
