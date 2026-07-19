@@ -53,7 +53,7 @@ setopt pipefail
 
 # --- Parse args --------------------------------------------------------
 
-typeset -a SOURCE_DIR_OPT NAME_OPT DEST_DIR_OPT VERSION_OPT SECRET_KEY_OPT CHANNEL_OPT BUILD_CMD_OPT
+typeset -a SOURCE_DIR_OPT NAME_OPT DEST_DIR_OPT VERSION_OPT SECRET_KEY_OPT CHANNEL_OPT BUILD_CMD_OPT HELP_FLAG
 zparseopts -D -E -F -- \
     -source-dir:=SOURCE_DIR_OPT \
     -name:=NAME_OPT \
@@ -61,7 +61,22 @@ zparseopts -D -E -F -- \
     -version:=VERSION_OPT \
     -secret-key:=SECRET_KEY_OPT \
     -channel:=CHANNEL_OPT \
-    -build-cmd:=BUILD_CMD_OPT
+    -build-cmd:=BUILD_CMD_OPT \
+    -help=HELP_FLAG \
+    h=HELP_FLAG
+
+if (( ${#HELP_FLAG} )); then
+    print -- "usage: zsh scripts/publish-package.zsh [--source-dir <dir>] [--name <name>]"
+    print -- "           [--dest-dir <dir>] [--version <string>] [--secret-key <path>]"
+    print -- "           [--channel {stable,latest}] [--build-cmd <command>]"
+    print --
+    print -- "builds a shipping-clean tarball from a mediawiki extension source tree,"
+    print -- "signs it with minisign, then atomically publishes it under <dest-dir>/<name>/."
+    print -- "reads <source-dir>/package.conf (default source-dir: .) for PKG_NAME/"
+    print -- "PKG_BUILD_CMD/PKG_DEST_DIR/PKG_SOURCE_DIR defaults; CLI flags override."
+    print -- "see this file's header comment for the full option-resolution rules."
+    exit 0
+fi
 
 # --- Resolve source_dir anchor, then package.conf, then everything else ---
 # anchor_dir is the directory that locates package.conf: --source-dir if
