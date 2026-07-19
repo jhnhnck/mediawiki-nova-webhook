@@ -4,7 +4,7 @@
 #
 # usage: zsh scripts/publish-package.zsh [--source-dir <dir>] [--name <name>] \
 #            [--dest-dir <dir>] [--version <string>] [--secret-key <path>] \
-#            [--channel {stable,latest}] [--build-cmd <command>]
+#            [--channel {stable,latest}] [--build-cmd <command>] [--bump {minor,patch}]
 #
 # builds a shipping-clean tarball from a mediawiki extension source tree,
 # signs it with minisign, then atomically publishes it (tarball + .minisig +
@@ -48,12 +48,48 @@
 # --secret-key overrides the signing key (default: ~/.minisign/minisign.key,
 # password-protected in production). pass a throwaway unencrypted test key
 # here for local verification runs; never commit a key produced that way.
+#
+# versioning: an explicit --version always wins outright and skips every-
+# thing below. otherwise, --channel stable bumps $source_dir/extension.json's
+# "version" field, commits it, and tags it (${pkg_name}-<version>[.0]) before
+# any build/sign work - mirrors doom-bot-dev/scripts/deploy.py's
+# compute_new_version(): --bump minor (default) advances to the current attu
+# year (reset to "<year>.0") or increments the minor component within the
+# same year; --bump patch increments off the highest existing
+# "${pkg_name}-<major>.<minor>.*" git tag. the attu year comes from
+# ~/.attu-epoch.toml (the same [epoch] block doom-bot-dev's /fix epoch
+# command produces, kept as a single host-level file instead of a third
+# hardcoded copy - see doom-bot-dev's notes/bugs.md "deploy" section) - if
+# that file is missing, a --bump minor publish aborts rather than falling
+# back to anything else. --channel latest never bumps/commits/tags
+# (unaffected by any of this - a dev-build channel needs to stay usable
+# while iterating on uncommitted local changes, same reasoning as the
+# clean-tree gate below), and keeps resolving from extension.json's current
+# (unbumped) version, then a UTC timestamp, same as before this existed.
+#
+# regardless of channel, the permanent per-version tarball name gets a
+# short content-hash suffix (${pkg_name}-<version>-<hash>.tar.zst) as a
+# second, independent safety net against silently overwriting a prior
+# release's archived tarball - even a forgotten bump or a manually-collided
+# --version can't clobber history this way, since the hash still disambig-
+# uates as long as anything actually shipped differs. this is a hash of the
+# staged tree (post-.pkgignore, pre-tar), not "git rev-parse --short HEAD" -
+# a commit sha would be wrong for --channel latest, whose whole point is
+# tolerating a dirty working tree: two dirty-tree latest publishes at the
+# same HEAD but different uncommitted content would collide on the same
+# commit sha yet ship different bytes, silently overwriting each other -
+# the exact failure mode this suffix exists to prevent. for --channel
+# stable this is equivalent to a commit hash anyway (the clean-tree gate +
+# auto-commit guarantee the staged tree always matches HEAD there), and the
+# git tag already created gives full commit traceability for that case. the
+# swung channel symlink (${pkg_name}-${channel}.tar.zst) is deliberately
+# NOT suffixed - the Dockerfile fetch depends on that exact fixed name.
 set -eu
 setopt pipefail
 
 # --- Parse args --------------------------------------------------------
 
-typeset -a SOURCE_DIR_OPT NAME_OPT DEST_DIR_OPT VERSION_OPT SECRET_KEY_OPT CHANNEL_OPT BUILD_CMD_OPT HELP_FLAG
+typeset -a SOURCE_DIR_OPT NAME_OPT DEST_DIR_OPT VERSION_OPT SECRET_KEY_OPT CHANNEL_OPT BUILD_CMD_OPT BUMP_OPT HELP_FLAG
 zparseopts -D -E -F -- \
     -source-dir:=SOURCE_DIR_OPT \
     -name:=NAME_OPT \
@@ -62,6 +98,7 @@ zparseopts -D -E -F -- \
     -secret-key:=SECRET_KEY_OPT \
     -channel:=CHANNEL_OPT \
     -build-cmd:=BUILD_CMD_OPT \
+    -bump:=BUMP_OPT \
     -help=HELP_FLAG \
     h=HELP_FLAG
 
@@ -69,11 +106,14 @@ if (( ${#HELP_FLAG} )); then
     print -- "usage: zsh scripts/publish-package.zsh [--source-dir <dir>] [--name <name>]"
     print -- "           [--dest-dir <dir>] [--version <string>] [--secret-key <path>]"
     print -- "           [--channel {stable,latest}] [--build-cmd <command>]"
+    print -- "           [--bump {minor,patch}]"
     print --
     print -- "builds a shipping-clean tarball from a mediawiki extension source tree,"
     print -- "signs it with minisign, then atomically publishes it under <dest-dir>/<name>/."
     print -- "reads <source-dir>/package.conf (default source-dir: .) for PKG_NAME/"
     print -- "PKG_BUILD_CMD/PKG_DEST_DIR/PKG_SOURCE_DIR defaults; CLI flags override."
+    print -- "--channel stable bumps/commits/tags extension.json's version (--bump"
+    print -- "minor, the default, needs ~/.attu-epoch.toml; --bump patch does not)."
     print -- "see this file's header comment for the full option-resolution rules."
     exit 0
 fi
@@ -141,6 +181,15 @@ case "$channel" in
         ;;
 esac
 
+bump="${BUMP_OPT[2]:-minor}"
+case "$bump" in
+    minor|patch) ;;
+    *)
+        print -u2 -- "invalid --bump: $bump (must be 'minor' or 'patch')"
+        exit 2
+        ;;
+esac
+
 [[ -f "$secret_key" ]] || { print -u2 -- "secret key not found: $secret_key"; exit 2; }
 command -v minisign >/dev/null || { print -u2 -- "missing: minisign"; exit 1; }
 command -v rsync >/dev/null || { print -u2 -- "missing: rsync"; exit 1; }
@@ -170,16 +219,95 @@ if [[ "$channel" == "stable" ]]; then
     fi
 fi
 
-# fall back to extension.json's "version" field, then a UTC timestamp
-if (( ${#VERSION_OPT} )); then
-    version="${VERSION_OPT[2]}"
-elif [[ -f "$source_dir/extension.json" ]]; then
-    version="$(python3 -c "
+# --- Version resolution --------------------------------------------------
+# current_ver is read regardless of channel - it's the bump baseline for
+# stable and the existing fallback for latest (or an explicit --version on
+# either channel, which always wins outright - see header comment).
+current_ver=""
+if [[ -f "$source_dir/extension.json" ]]; then
+    current_ver="$(python3 -c "
 import json
 print(json.load(open('$source_dir/extension.json')).get('version', ''))
 ")"
 fi
-version="${version:-$(date -u +%Y%m%dT%H%M%SZ)}"
+
+if [[ "$channel" == "stable" ]] && (( ! ${#VERSION_OPT} )); then
+    [[ -n "$current_ver" ]] || { print -u2 -- "abort: $source_dir/extension.json has no version to bump from"; exit 1; }
+    tag_prefix="${pkg_name}-"
+    current_parts=("${(@s:.:)current_ver}")
+
+    if [[ "$bump" == "minor" ]]; then
+        epoch_file="$HOME/.attu-epoch.toml"
+        if [[ ! -f "$epoch_file" ]]; then
+            print -u2 -- "abort: $epoch_file not found - required to compute the current attu year for a minor bump"
+            print -u2 -- "  copy the [epoch] block doom-bot-dev's /fix epoch command last produced into that file"
+            print -u2 -- "  (or publish with --bump patch, which doesn't need it)"
+            exit 1
+        fi
+        attu_year="$(python3 - "$epoch_file" <<'PY'
+import sys
+import tomllib
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
+
+with open(sys.argv[1], 'rb') as f:
+    epoch = tomllib.load(f)['epoch']
+
+tz = ZoneInfo('UTC')
+rollover_minutes = epoch['rollover_minutes']
+rollover_time = datetime.min.time().replace(hour=rollover_minutes // 60, minute=rollover_minutes % 60, tzinfo=tz)
+epoch_dt = datetime.combine(datetime.fromtimestamp(epoch['time']).astimezone(), rollover_time)
+today_dt = datetime.combine(date.today(), rollover_time)
+elapsed_days = int((today_dt - epoch_dt).total_seconds() / 86400)
+year = epoch['year'] + (elapsed_days // epoch['length'])
+if (elapsed_days % epoch['length']) == 0 and datetime.now().astimezone() < today_dt:
+    year -= 1
+print(year)
+PY
+)"
+        if (( current_parts[1] != attu_year )); then
+            version="${attu_year}.0"
+        else
+            version="${current_parts[1]}.$(( current_parts[2] + 1 ))"
+        fi
+        new_tag="${tag_prefix}${version}.0"
+    else
+        # patch - find the highest existing tag for the current major.minor, +1
+        base="${current_parts[1]}.${current_parts[2]}"
+        max_patch=-1
+        for tag in "${(@f)$(git -C "$source_dir" tag -l "${tag_prefix}${base}.*")}"; do
+            [[ -z "$tag" ]] && continue
+            tag_ver="${tag#$tag_prefix}"
+            tag_parts=("${(@s:.:)tag_ver}")
+            (( ${#tag_parts} == 3 )) || continue
+            [[ "${tag_parts[3]}" =~ '^[0-9]+$' ]] || continue
+            [[ "${tag_parts[1]}.${tag_parts[2]}" == "$base" ]] || continue
+            (( tag_parts[3] > max_patch )) && max_patch="${tag_parts[3]}"
+        done
+        version="${base}.$(( max_patch + 1 ))"
+        new_tag="${tag_prefix}${version}"
+    fi
+
+    print -P "%F{cyan}[publish]%f bumping version: $current_ver -> $version (tag: $new_tag)"
+    python3 -c "
+import re
+path = '$source_dir/extension.json'
+content = open(path).read()
+updated = re.sub(r'\"version\"\s*:\s*\"[^\"]*\"', '\"version\": \"$version\"', content, count=1)
+open(path, 'w').write(updated)
+"
+    git -C "$source_dir" add -- extension.json
+    git -C "$source_dir" commit --quiet -m "chore(publish): bump version to ${version}"
+    if ! git -C "$source_dir" tag "$new_tag"; then
+        git -C "$source_dir" reset --hard --quiet HEAD~1
+        print -u2 -- "abort: tag $new_tag already exists - bump commit rolled back, resolve manually"
+        exit 1
+    fi
+elif (( ${#VERSION_OPT} )); then
+    version="${VERSION_OPT[2]}"
+else
+    version="${current_ver:-$(date -u +%Y%m%dT%H%M%SZ)}"
+fi
 
 pkg_dir="$dest_dir/$pkg_name"
 mkdir -p "$pkg_dir"
@@ -217,9 +345,13 @@ else
 fi
 rsync --archive "${rsync_excludes[@]}" "$source_dir/" "$stage_dir/"
 
+# short content-hash suffix for the permanent tarball name - see header
+# comment for why this hashes the staged tree rather than the git commit
+content_hash="$(find "$stage_dir" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -c1-8)"
+
 # --- Tar + sign into place-adjacent tmp files (same filesystem as the ---
 # --- final destination, so the later move is a true atomic rename)    ---
-tar_name="${pkg_name}-${version}.tar.zst"
+tar_name="${pkg_name}-${version}-${content_hash}.tar.zst"
 tar_final="$pkg_dir/$tar_name"
 sig_final="$tar_final.minisig"
 tar_tmp="$pkg_dir/.${tar_name}.tmp.$$"
