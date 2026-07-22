@@ -10,6 +10,7 @@ ARG MEDIAWIKI_BRANCH='REL1_44'
 
 # system packages
 RUN --mount=type=cache,sharing=locked,target=/var/lib/apt \
+    --mount=type=cache,sharing=locked,target=/var/cache/apt \
     set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
@@ -22,6 +23,7 @@ SHELL [ "/usr/bin/zsh", "-euc" ]
 # PHP extensions
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 RUN --mount=type=cache,sharing=locked,target=/var/lib/apt \
+    --mount=type=cache,sharing=locked,target=/var/cache/apt \
     install-php-extensions \
         @composer \
         apcu \
