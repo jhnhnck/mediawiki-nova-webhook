@@ -14,7 +14,6 @@ use MediaWiki\Page\Hook\PageDeleteCompleteHook;
 use MediaWiki\Page\Hook\PageUndeleteCompleteHook;
 use MediaWiki\Page\ProperPageIdentity;
 use MediaWiki\Page\WikiPage;
-use MediaWiki\Page\WikiPageFactory;
 use MediaWiki\Permissions\Authority;
 use MediaWiki\Revision\RevisionLookup;
 use MediaWiki\Revision\RevisionRecord;
@@ -28,18 +27,15 @@ use MediaWiki\Linker\LinkTarget;
 
 class PageAlert extends DiscordAlert implements PageSaveCompleteHook, PageDeleteCompleteHook, PageMoveCompleteHook, PageUndeleteCompleteHook {
     private UserFactory $userFactory;
-    private WikiPageFactory $pageFactory;
 
     public function __construct(HttpRequestFactory $httpFactory,
                                 RevisionLookup $revLookup,
                                 TitleFactory $titleFactory,
                                 UrlUtils $urlUtils,
                                 UserFactory $userFactory,
-                                WikiPageFactory $pageFactory,
                                 NovaDiscordConfig $novaConfig,
                                 LoggerSpi $loggerSpi) {
         $this->userFactory = $userFactory;
-        $this->pageFactory = $pageFactory;
 
         parent::__construct($httpFactory, $revLookup, $titleFactory, $urlUtils, $novaConfig, $loggerSpi);
     }
@@ -49,7 +45,7 @@ class PageAlert extends DiscordAlert implements PageSaveCompleteHook, PageDelete
      * @inheritDoc
      */
     public function onPageSaveComplete($wikiPage, $userIdentity, $summary, $flags, $revision, $editResult) {
-        $this->handlePageSave($wikiPage, $userIdentity, (string)$summary, (int)$flags, $revision, $editResult);
+        $this->handlePageSave($wikiPage, $userIdentity, (string)$summary, $revision, $editResult);
     }
 
     /**
@@ -59,7 +55,6 @@ class PageAlert extends DiscordAlert implements PageSaveCompleteHook, PageDelete
     private function handlePageSave(WikiPage $wikiPage,
                                     UserIdentity $userIdentity,
                                     string $summary,
-                                    int $flags,
                                     RevisionRecord $revision,
                                     EditResult $editResult): void {
         $hookName = 'PageSaveComplete';
@@ -83,22 +78,21 @@ class PageAlert extends DiscordAlert implements PageSaveCompleteHook, PageDelete
         }
 
         $parent = $this->getParentRevision($revision);
-        $msg = wfMessage(
-            ($editResult->isNew() ? 'discord-create' : 'discord-edit'),
-            $this->formatUserLink($user),
-            $this->formatMarkdownLink($wikiPage->getTitle(), $wikiPage->getTitle()->getCanonicalURL()),
-            $this->formatRevisionText($revision, $parent),
-            $this->formatMessage($summary),
-        )->inContentLanguage()->plain();
-
-        if (!$revision->isMinor()) {
-            $diffBlock = $this->getDiffBlock($revision, $parent);
-            if ($diffBlock !== null) {
-                $msg .= "\n" . $diffBlock;
+        $diff = null;
+        foreach ($this->novaConfig->getDestinationsForHook($hookName) as $destination) {
+            if ($destination['format'] === 'discord' && !$revision->isMinor()) {
+                $diff = $this->getDiffBlock($revision, $parent);
+                break;
             }
         }
-
-        $this->sendAlert($hookName, $msg, (int)wfTimestamp(TS_UNIX, $revision->getTimestamp()));
+        $this->sendEvent(new WebhookEvent(
+            $hookName, (int)wfTimestamp(TS_UNIX, $revision->getTimestamp()),
+            $this->describeUser($user), $this->describePage($wikiPage->getTitle()), [
+                'created' => $editResult->isNew(),
+                'summary' => $revision->isDeleted(RevisionRecord::DELETED_COMMENT) ? '' : $summary,
+                'revision' => $this->describeRevision($revision, $parent),
+            ], $diff
+        ));
     }
 
     /**
@@ -122,15 +116,12 @@ class PageAlert extends DiscordAlert implements PageSaveCompleteHook, PageDelete
             return;
         }
 
-        $msg = wfMessage(
-            'discord-articledelete',
-            $this->formatUserLink($user),
-            $this->formatMarkdownLink($title, $title->getCanonicalURL()),
-            $this->formatMessage($reason),
-            $archivedRevisionCount
-        )->inContentLanguage()->plain();
-
-        $this->sendAlert($hookName, $msg, (int)wfTimestamp(TS_UNIX, $deletedRev->getTimestamp()));
+        $this->sendEvent(new WebhookEvent(
+            $hookName, (int)wfTimestamp(TS_UNIX, $logEntry->getTimestamp()),
+            $this->describeUser($user), $this->describePage($title, $pageID), [
+                'reason' => $reason, 'revision_count' => $archivedRevisionCount,
+            ]
+        ));
     }
 
     /**
@@ -138,7 +129,7 @@ class PageAlert extends DiscordAlert implements PageSaveCompleteHook, PageDelete
      * @inheritDoc
      */
     public function onPageMoveComplete($old, $new, $user, $pageid, $redirid, $reason, $revision) {
-        $this->handlePageMove($old, $new, $user, $pageid, $redirid, $reason, $revision);
+        $this->handlePageMove($old, $new, $user, $pageid, $reason, $revision);
     }
 
     /**
@@ -149,7 +140,6 @@ class PageAlert extends DiscordAlert implements PageSaveCompleteHook, PageDelete
                                     LinkTarget $new,
                                     UserIdentity $userIdentity,
                                     int $pageid,
-                                    int $redirid,
                                     string $reason,
                                     RevisionRecord $revision): void {
         $hookName = 'PageMoveComplete';
@@ -162,19 +152,15 @@ class PageAlert extends DiscordAlert implements PageSaveCompleteHook, PageDelete
             return;
         }
 
-        $oldPage = $this->pageFactory->newFromLinkTarget($old);
-        $newPage = $this->pageFactory->newFromLinkTarget($new);
-
-        $msg = wfMessage(
-            'discord-titlemove',
-            $this->formatUserLink($user),
-            $this->formatMarkdownLink($oldPage->getTitle(), $oldPage->getTitle()->getCanonicalURL()),
-            $this->formatMarkdownLink($newPage->getTitle(), $newPage->getTitle()->getCanonicalURL()),
-            $this->formatMessage($reason),
-            $this->formatRevisionText($revision, $this->getParentRevision($revision)),
-        )->inContentLanguage()->plain();
-
-        $this->sendAlert($hookName, $msg, (int)wfTimestamp(TS_UNIX, $revision->getTimestamp()));
+        $oldTitle = $this->titleFactory->newFromLinkTarget($old);
+        $newTitle = $this->titleFactory->newFromLinkTarget($new);
+        $this->sendEvent(new WebhookEvent(
+            $hookName, (int)wfTimestamp(TS_UNIX, $revision->getTimestamp()),
+            $this->describeUser($user), $this->describePage($newTitle, $pageid), [
+                'old_page' => $this->describePage($oldTitle, $pageid), 'reason' => $reason,
+                'revision' => $this->describeRevision($revision, $this->getParentRevision($revision)),
+            ]
+        ));
     }
 
     /**
@@ -200,15 +186,11 @@ class PageAlert extends DiscordAlert implements PageSaveCompleteHook, PageDelete
             return;
         }
 
-        // TODO: we can also include $restoredRevisionCount here somewhere
-        $msg = wfMessage(
-            'discord-articleundelete',
-            $this->formatUserLink($user),
-            ($created ? '' : wfMessage('discord-undeleterev')->inContentLanguage()->text()),
-            $this->formatMarkdownLink($title, $title->getCanonicalURL()),
-            $this->formatMessage($reason),
-        )->inContentLanguage()->plain();
-
-        $this->sendAlert($hookName, $msg, (int)wfTimestamp(TS_UNIX, $restoredRev->getTimestamp()));
+        $this->sendEvent(new WebhookEvent(
+            $hookName, (int)wfTimestamp(TS_UNIX, $logEntry->getTimestamp()),
+            $this->describeUser($user), $this->describePage($title, $page->getId()), [
+                'reason' => $reason, 'revision_count' => $restoredRevisionCount, 'created' => $created,
+            ]
+        ));
     }
 }

@@ -39,7 +39,7 @@ class PageMoveCompleteHookTest extends NovaDiscordIntegrationTestCase {
         $expectedPayload = '{"content":"[' . $username . '](<https://novadiscord.local/wiki/User:' . $userScored . '>) ([t](<https://novadiscord.local/wiki/User_talk:' . $userScored . '>)|[c](<https://novadiscord.local/wiki/Special:Contributions/' . $userScored . '>)) moved [NovaTestPageMoveBefore](<https://novadiscord.local/wiki/NovaTestPageMoveBefore>) to [NovaTestPageMoveAfter](<https://novadiscord.local/wiki/NovaTestPageMoveAfter>) `Moved page because reasons` ([diff](<https://novadiscord.local/index.php?title=NovaTestPageMoveAfter&diff=prev&oldid=2>)) (m) (+0)","allowed_mentions":{"parse":[]}}';
 
         // verify webhook payload
-        $payload = $this->mockHttpFactory->getCaptured()[0];
+        $payload = $this->getDiscordRequests()[0];
         $this->assertNotNull($payload, 'Webhook payload should be captured on page move');
         $this->assertEquals($expectedPayload, $payload['options']['postData'], 'Webhook payload for page move should match expected output');
     }

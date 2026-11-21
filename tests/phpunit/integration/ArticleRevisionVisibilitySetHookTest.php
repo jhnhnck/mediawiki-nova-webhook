@@ -42,7 +42,7 @@ class ArticleRevisionVisibilitySetHookTest extends NovaDiscordIntegrationTestCas
 
         $expectedPayload = '{"content":"[' . $performerUsername . '](<https://novadiscord.local/wiki/User:' . $performerUserScored . '>) ([t](<https://novadiscord.local/wiki/User_talk:' . $performerUserScored . '>)|[c](<https://novadiscord.local/wiki/Special:Contributions/' . $performerUserScored . '>)) changed visibility of 1 revisions on [' . $pageTitle . '](<https://novadiscord.local/wiki/' . $pageTitle . '>)","allowed_mentions":{"parse":[]}}';
 
-        $payload = $this->mockHttpFactory->getCaptured()[0];
+        $payload = $this->getDiscordRequests()[0];
         $this->assertNotNull($payload, 'Webhook payload should be captured on revision visibility change');
         $this->assertEquals($expectedPayload, $payload['options']['postData'], 'Webhook payload for revision visibility change should match expected output');
     }

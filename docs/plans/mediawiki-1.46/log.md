@@ -65,3 +65,18 @@ Parent 9981de3 on REL1_46. Preserve 50-test behavior baseline while reducing pag
 - Timestamp source map for phase 3: saves/moves use revision event time; deletion/restoration use the supplied ManualLogEntry timestamp; uploads use file timestamp; block uses block timestamp; unblock/file-version deletion use current operation time because their hook supplies no log/event timestamp. Import, merge, visibility, protection, rename, and manual groups likewise require hook-time fallback
 - Kept existing hooks. PageHistoryVisibilityChanged offers explicit performer/log timestamp but adoption would require separate cause/timing/suppression parity work; no simultaneous hook/event registration. Kept upload hook rather than adding FileUpload
 - Reviewed actual phase diff for lookup reuse, missing-parent behavior, namespace filtering, title identity, and HTTP routing. No phase-specific defects; B001 lint debt remains for final readiness
+
+## 2026-11-21 - phase 3 started
+
+Parent 9ceec2d on REL1_46. Shared event model, Discord renderer, metadata-only JSON v1, validated per-destination format, existing message parity, safe mixed-format delivery. Baseline 50 tests / 143 assertions / zero skips.
+
+## 2026-11-21 - phase 3 verification and review
+
+- Shared WebhookEvent data now drives DiscordRenderer and JSON v1 projection across all 17 handlers. Event values reject framework objects; raw diff content stays internal and JSON-only edits avoid diff generation
+- Full suite: 60 tests / 474 assertions / zero skips (/tmp/nova-phase3-final.log). Existing Discord payload fixtures still pass; operation tests now capture both destinations and assert each hook's JSON field map
+- Real edit fan-out verifies actor, revision ID, raw Unicode summary, destination, schema version, UTC time, and no raw revision body. Deletion verifies log operation time rather than old revision time
+- HTTP 503 and thrown transport failures do not block the next destination. Invalid formats (including explicit null), malformed/insecure URLs, exclusions, invalid UTF-8, and JSON payloads larger than Discord's limit are covered. Serializer does not mutate event metadata
+- Core supplies null fileVersions for an all-version API restore; JSON v1 preserves null instead of coercing it to an empty list. This was found by the real-operation test
+- Config routing now preserves format metadata. Format defaults to discord only when absent, and invalid entries log no endpoint URLs. Exceptions retain explicit routing, opt-in, deny-list, suppressed-error checks, rate limit, and quiet failure behavior for both serializers
+- Phan with --allow-polyfill-parser passed after nullable uploader guards and local data narrowing; default command cannot run without php-ast in the image. Final tooling will make the supported fallback explicit. Syntax passed; codesniffer debt remains B001 for separate housekeeping
+- Reviewed phase diff against 9ceec2d: collection/rendering boundaries, timestamp sources, metadata privacy, template parity, error isolation, and default compatibility. Added docs/webhook-events.md as the public v1 field/time contract

@@ -94,11 +94,13 @@ class ErrorAlert extends DiscordAlert implements LogExceptionHook {
         $uri = $_SERVER['REQUEST_URI'] ?? '';
         $context = $uri ? "{$method} {$uri}" : $method;
 
-        $msg = '[' . get_class($e) . '] ' . $this->truncateString(
+        $detail = $this->truncateString(
             $e->getMessage() . ' - ' . $file . ' (' . $context . ')',
             $this->novaConfig->getMaxChars()
         );
 
-        $this->sendAlert('LogException', $msg, time());
+        $this->sendEvent(new WebhookEvent(
+            'LogException', time(), null, null, ['class' => get_class($e), 'detail' => $detail]
+        ));
     }
 }

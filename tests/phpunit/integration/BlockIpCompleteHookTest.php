@@ -32,7 +32,7 @@ class BlockIpCompleteHookTest extends NovaDiscordIntegrationTestCase {
 
         $expectedPayload = '{"content":"[' . $blockingUsername . '](<https://novadiscord.local/wiki/User:' . $blockingUserScored . '>) ([t](<https://novadiscord.local/wiki/User_talk:' . $blockingUserScored . '>)|[c](<https://novadiscord.local/wiki/Special:Contributions/' . $blockingUserScored . '>)) blocked [' . $targetUsername . '](<https://novadiscord.local/wiki/User:' . $targetUserScored . '>) ([t](<https://novadiscord.local/wiki/User_talk:' . $targetUserScored . '>)|[c](<https://novadiscord.local/wiki/Special:Contributions/' . $targetUserScored . '>)) `Test block reason` (infinity)","allowed_mentions":{"parse":[]}}';
 
-        $payload = $this->mockHttpFactory->getCaptured()[0];
+        $payload = $this->getDiscordRequests()[0];
         $this->assertNotNull($payload, 'Webhook payload should be captured on user block');
         $this->assertEquals($expectedPayload, $payload['options']['postData'], 'Webhook payload for user block should match expected output');
     }

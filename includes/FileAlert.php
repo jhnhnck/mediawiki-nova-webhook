@@ -38,27 +38,24 @@ class FileAlert extends DiscordAlert implements UploadCompleteHook, FileDeleteCo
         $hookName = 'UploadComplete';
 
         $lf = $uploadBase->getLocalFile();
-        $user = $this->userFactory->newFromUserIdentity($lf->getUploader());
+        $uploader = $lf->getUploader();
+        if ($uploader === null) {
+            return;
+        }
+        $user = $this->userFactory->newFromUserIdentity($uploader);
 
         if (!$this->isEnabled($hookName, NS_FILE, $user)) {
             return;
         }
 
-        $comment = $lf->getDescription();
-        $isNewRevision = count($lf->getHistory(1)) > 0;
-
-        $msg = wfMessage(
-            'discord-uploadcomplete',
-            $this->formatUserLink($user),
-            ($isNewRevision ? wfMessage('discord-uploadnewver')->inContentLanguage()->text() : ''),
-            $this->formatMarkdownLink($lf->getName(), $lf->getTitle()->getCanonicalURL()),
-            $this->formatMessage($comment),
-            $this->formatBytes($lf->getSize()),
-            $lf->getWidth(),
-            $lf->getHeight(),
-            $lf->getMimeType()
-        )->inContentLanguage()->plain();
-        $this->sendAlert($hookName, $msg, (int)wfTimestamp(TS_UNIX, $lf->getTimestamp()));
+        $this->sendEvent(new WebhookEvent(
+            $hookName, (int)wfTimestamp(TS_UNIX, $lf->getTimestamp()),
+            $this->describeUser($user), $this->describePage($lf->getTitle()), [
+                'filename' => $lf->getName(), 'reupload' => $lf->getHistory(1) !== [],
+                'comment' => $lf->getDescription(), 'size' => $lf->getSize(),
+                'width' => $lf->getWidth(), 'height' => $lf->getHeight(), 'mime_type' => $lf->getMimeType(),
+            ]
+        ));
     }
 
     /**
@@ -77,13 +74,11 @@ class FileAlert extends DiscordAlert implements UploadCompleteHook, FileDeleteCo
             return;
         }
 
-        $msg = wfMessage(
-            'discord-filedeletecomplete',
-            $this->formatUserLink($user),
-            $this->formatMarkdownLink($file->getName(), $file->getTitle()->getCanonicalURL()),
-            $this->formatMessage($reason)
-        )->inContentLanguage()->plain();
-        $this->sendAlert($hookName, $msg, (int)wfTimestamp(TS_UNIX, $file->getTimestamp()));
+        $this->sendEvent(new WebhookEvent(
+            $hookName, time(), $this->describeUser($user), $this->describePage($file->getTitle()), [
+                'filename' => $file->getName(), 'archive_name' => $oldimage, 'reason' => $reason,
+            ]
+        ));
     }
 
     /**
@@ -97,12 +92,10 @@ class FileAlert extends DiscordAlert implements UploadCompleteHook, FileDeleteCo
             return;
         }
 
-        $msg = wfMessage(
-            'discord-fileundeletecomplete',
-            $this->formatUserLink($user),
-            $this->formatMarkdownLink($title, $title->getCanonicalURL()),
-            $this->formatMessage($reason)
-        )->inContentLanguage()->plain();
-        $this->sendAlert($hookName, $msg, time());
+        $this->sendEvent(new WebhookEvent(
+            $hookName, time(), $this->describeUser($user), $this->describePage($title), [
+                'versions' => $fileVersions === null ? null : array_values($fileVersions), 'reason' => $reason,
+            ]
+        ));
     }
 }

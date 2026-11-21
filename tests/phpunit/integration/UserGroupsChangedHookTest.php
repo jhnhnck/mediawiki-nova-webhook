@@ -22,6 +22,6 @@ class UserGroupsChangedHookTest extends NovaDiscordIntegrationTestCase {
         $this->mockHttpFactory->reset();
         $this->getServiceContainer()->getUserGroupManager()->addUserToGroup($target, 'autoconfirmed');
         $this->runDeferredUpdates();
-        $this->assertCount(0, $this->mockHttpFactory->getCaptured());
+        $this->assertCount(0, $this->getDiscordRequests());
     }
 }

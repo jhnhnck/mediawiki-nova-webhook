@@ -86,6 +86,10 @@ $wgDiscordDefaultHooks = ['PageSaveComplete', 'PageDeleteComplete'];
 
 ## Hooks used
 
+Each webhook entry may select `format => 'discord'` (the default) or `format => 'json'`.
+JSON receivers get versioned event metadata; Discord messages are rendered from the same event data.
+See [webhook formats and schema v1](docs/webhook-events.md) for configuration and field definitions.
+
 - `PageDeleteComplete` - Page deletions
 - `PageMoveComplete` - Page moves
 - `PageSaveComplete` - New edits to pages and page creations

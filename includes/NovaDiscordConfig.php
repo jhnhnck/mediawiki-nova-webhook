@@ -7,6 +7,8 @@
 namespace MediaWiki\Extension\NovaDiscord;
 
 use MediaWiki\Config\ServiceOptions;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 class NovaDiscordConfig {
     public const CONSTRUCTOR_OPTIONS = [
@@ -23,8 +25,10 @@ class NovaDiscordConfig {
     ];
 
     private ServiceOptions $options;
+    private LoggerInterface $logger;
 
-    public function __construct(ServiceOptions $options) {
+    public function __construct(ServiceOptions $options, ?LoggerInterface $logger = null) {
+        $this->logger = $logger ?? new NullLogger();
         $options->assertRequiredOptions(self::CONSTRUCTOR_OPTIONS);
         $this->options = $options;
     }
@@ -40,25 +44,37 @@ class NovaDiscordConfig {
     private const EXPLICIT_ONLY_HOOKS = ['LogException'];
 
     public function getWebhooksForHook(string $hookName): array {
+        return array_column($this->getDestinationsForHook($hookName), 'url');
+    }
+
+    public function getDestinationsForHook(string $hookName): array {
         $defaultHooks = $this->options->get('DiscordDefaultHooks');
-        $urls = [];
+        $destinations = [];
         foreach ($this->options->get('DiscordWebhooks') as $webhook) {
+            if (!is_array($webhook)) {
+                $this->logger->warning('Skipping webhook entry: expected an array');
+                continue;
+            }
             $url = $webhook['url'] ?? '';
-            // skip misconfigured entries; require https to prevent SSRF via http/file/etc URLs
-            if (!str_starts_with($url, 'https://') || !filter_var($url, FILTER_VALIDATE_URL)) {
+            if (!is_string($url) || !str_starts_with($url, 'https://') || !filter_var($url, FILTER_VALIDATE_URL)) {
+                continue;
+            }
+            $format = array_key_exists('format', $webhook) ? $webhook['format'] : 'discord';
+            if (!in_array($format, ['discord', 'json'], true)) {
+                $this->logger->warning('Skipping webhook entry: format must be discord or json');
                 continue;
             }
             $hooks = array_key_exists('hooks', $webhook) ? $webhook['hooks'] : $defaultHooks;
             if ($hooks === null) {
-                if (in_array($hookName, self::EXPLICIT_ONLY_HOOKS)) {
+                if (in_array($hookName, self::EXPLICIT_ONLY_HOOKS, true)) {
                     continue;
                 }
-            } elseif (!in_array($hookName, $hooks)) {
+            } elseif (!is_array($hooks) || !in_array($hookName, $hooks, true)) {
                 continue;
             }
-            $urls[] = $url;
+            $destinations[] = ['url' => $url, 'format' => $format];
         }
-        return $urls;
+        return $destinations;
     }
 
     public function isNoBots(): bool {

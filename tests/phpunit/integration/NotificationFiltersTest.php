@@ -19,7 +19,7 @@ class NotificationFiltersTest extends NovaDiscordIntegrationTestCase {
         $user = $this->getMutableTestUser($groups);
         $this->mockHttpFactory->reset();
         $this->assertStatusGood($this->editPage('NovaFiltered', 'Content', '', 0, $user->getAuthority()));
-        $this->assertCount(0, $this->mockHttpFactory->getCaptured());
+        $this->assertCount(0, $this->getDiscordRequests());
     }
 
     public static function provideFilters(): array {
@@ -35,7 +35,7 @@ class NotificationFiltersTest extends NovaDiscordIntegrationTestCase {
         $this->editPage('NovaNull', 'Same content');
         $this->mockHttpFactory->reset();
         $this->assertStatusOK($this->editPage('NovaNull', 'Same content', 'Null summary'));
-        $this->assertCount(0, $this->mockHttpFactory->getCaptured());
+        $this->assertCount(0, $this->getDiscordRequests());
     }
 
     public function testMinorEditFilter(): void {
@@ -46,6 +46,6 @@ class NotificationFiltersTest extends NovaDiscordIntegrationTestCase {
         $updater->setContent(SlotRecord::MAIN, new WikitextContent('Minor change'));
         $updater->saveRevision(CommentStoreComment::newUnsavedComment('Minor'), EDIT_MINOR);
         $this->assertStatusGood($updater->getStatus());
-        $this->assertCount(0, $this->mockHttpFactory->getCaptured());
+        $this->assertCount(0, $this->getDiscordRequests());
     }
 }

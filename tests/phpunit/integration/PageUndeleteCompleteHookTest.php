@@ -40,7 +40,7 @@ class PageUndeleteCompleteHookTest extends NovaDiscordIntegrationTestCase {
         $expectedPayload = '{"content":"[' . $username . '](<https://novadiscord.local/wiki/User:' . $userScored . '>) ([t](<https://novadiscord.local/wiki/User_talk:' . $userScored . '>)|[c](<https://novadiscord.local/wiki/Special:Contributions/' . $userScored . '>)) undeleted [NovaTestPageUndelete](<https://novadiscord.local/wiki/NovaTestPageUndelete>) `Undeleted page for test case`","allowed_mentions":{"parse":[]}}';
 
         // verify webhook payload
-        $payload = $this->mockHttpFactory->getCaptured()[0];
+        $payload = $this->getDiscordRequests()[0];
         $this->assertNotNull($payload, 'Webhook payload should be captured on page undelete');
         $this->assertEquals($expectedPayload, $payload['options']['postData'], 'Webhook payload for page undelete should match expected output');
     }

@@ -22,6 +22,10 @@ abstract class NovaDiscordIntegrationTestCase extends ApiTestCase {
 
     protected function setUp(): void {
         parent::setUp();
+        $this->overrideConfigValue('DiscordWebhooks', [
+            ['url' => getenv('NOVA_WEBHOOK_URL')],
+            ['url' => 'https://events.example.test/hook', 'format' => 'json'],
+        ]);
         $services = $this->getServiceContainer();
 
         $this->mockHttpFactory = new MockRequestFactory(
@@ -56,7 +60,7 @@ abstract class NovaDiscordIntegrationTestCase extends ApiTestCase {
     }
 
     protected function assertNotification(string $fragment, int $count = 1): void {
-        $captured = $this->mockHttpFactory->getCaptured();
+        $captured = $this->getDiscordRequests();
         $this->assertCount($count, $captured);
         $contents = [];
         foreach ($captured as $request) {
@@ -65,5 +69,49 @@ abstract class NovaDiscordIntegrationTestCase extends ApiTestCase {
             $this->assertSame(['parse' => []], $payload['allowed_mentions']);
         }
         $this->assertStringContainsString($fragment, implode('\n', $contents));
+    }
+
+    protected function getDiscordRequests(): array {
+        $requests = $this->mockHttpFactory->getCaptured();
+        $discord = [];
+        foreach ($requests as $request) {
+            $payload = json_decode($request['options']['postData'], true, 512, JSON_THROW_ON_ERROR);
+            if (array_key_exists('content', $payload)) {
+                $discord[] = $request;
+                continue;
+            }
+            $this->assertSame(1, $payload['schema_version']);
+            $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/', $payload['timestamp']);
+            $this->assertIsString($payload['event']);
+            $this->assertIsString($payload['hook']);
+            $this->assertIsArray($payload['data']);
+            $fields = [
+                'PageSaveComplete' => ['created', 'summary', 'revision'],
+                'PageDeleteComplete' => ['reason', 'revision_count'],
+                'PageMoveComplete' => ['old_page', 'reason', 'revision'],
+                'PageUndeleteComplete' => ['reason', 'revision_count', 'created'],
+                'ArticleRevisionVisibilitySet' => ['revision_count', 'revision_ids'],
+                'ArticleProtectComplete' => ['reason', 'protections'],
+                'AfterImportPage' => ['revision_count', 'imported_revision_count', 'foreign_title'],
+                'ArticleMergeComplete' => ['source_page'],
+                'LocalUserCreated' => ['autocreated'],
+                'BlockIpComplete' => ['target', 'reason', 'expiry'],
+                'UnblockUserComplete' => ['target'],
+                'UserGroupsChanged' => ['target', 'reason', 'added', 'removed'],
+                'UploadComplete' => ['filename', 'reupload', 'comment', 'size', 'width', 'height', 'mime_type'],
+                'FileDeleteComplete' => ['filename', 'archive_name', 'reason'],
+                'FileUndeleteComplete' => ['versions', 'reason'],
+                'RenameUserComplete' => ['user_id', 'old_name', 'new_name', 'new_user_url'],
+                'LogException' => ['class', 'detail'],
+            ];
+            $this->assertSame($fields[$payload['hook']], array_keys($payload['data']));
+            $this->assertArrayNotHasKey('diff', $payload);
+            $this->assertArrayNotHasKey('diff', $payload['data']);
+            $this->assertStringNotContainsString('File description', $request['options']['postData']);
+        }
+        $this->assertCount(count($discord), array_filter(
+            $requests, static fn ($request) => str_contains($request['options']['postData'], '"schema_version":1')
+        ));
+        return $discord;
     }
 }

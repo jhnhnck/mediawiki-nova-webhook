@@ -44,12 +44,11 @@ class ExtensionAlert extends DiscordAlert implements RenameUserCompleteHook {
 
         $renamedUserPage = $this->userFactory->newFromName($new)->getUserPage();
 
-        $msg = wfMessage(
-            'discord-renameusercomplete',
-            $this->formatUserLink($user),
-            "*$old*",
-            $this->formatMarkdownLink($new, $renamedUserPage->getCanonicalURL())
-        )->inContentLanguage()->plain();
-        $this->sendAlert($hookName, $msg, time());
+        $this->sendEvent(new WebhookEvent(
+            $hookName, time(), $this->describeUser($user), null, [
+                'user_id' => $uid, 'old_name' => $old, 'new_name' => $new,
+                'new_user_url' => $renamedUserPage->getCanonicalURL(),
+            ]
+        ));
     }
 }

@@ -45,13 +45,11 @@ class ArticleAlert extends DiscordAlert implements ArticleRevisionVisibilitySetH
             return;
         }
 
-        $msg = wfMessage(
-            'discord-revvisibility',
-            $this->formatUserLink($user),
-            count($visibilityChangeMap),
-            $this->formatMarkdownLink($title, $title->getCanonicalURL())
-        )->inContentLanguage()->plain();
-        $this->sendAlert($hookName, $msg, time());
+        $this->sendEvent(new WebhookEvent(
+            $hookName, time(), $this->describeUser($user), $this->describePage($title), [
+                'revision_count' => count($visibilityChangeMap), 'revision_ids' => array_values($ids),
+            ]
+        ));
     }
 
     /**
@@ -65,14 +63,11 @@ class ArticleAlert extends DiscordAlert implements ArticleRevisionVisibilitySetH
             return;
         }
 
-        $msg = wfMessage(
-            'discord-articleprotect',
-            $this->formatUserLink($user),
-            $this->formatMarkdownLink($wikiPage->getTitle(), $wikiPage->getTitle()->getCanonicalURL()),
-            $this->formatMessage($reason),
-            implode(", ", $protect)
-        )->inContentLanguage()->plain();
-        $this->sendAlert($hookName, $msg, time());
+        $this->sendEvent(new WebhookEvent(
+            $hookName, time(), $this->describeUser($user), $this->describePage($wikiPage->getTitle()), [
+                'reason' => $reason, 'protections' => $protect,
+            ]
+        ));
     }
 
     /**
@@ -88,14 +83,12 @@ class ArticleAlert extends DiscordAlert implements ArticleRevisionVisibilitySetH
             return;
         }
 
-        $msg = wfMessage(
-            'discord-afterimportpage',
-            $this->formatUserLink($user),
-            $this->formatMarkdownLink($title, $title->getCanonicalURL()),
-            $revCount,
-            $sRevCount
-        )->inContentLanguage()->plain();
-        $this->sendAlert($hookName, $msg, time());
+        $this->sendEvent(new WebhookEvent(
+            $hookName, time(), $this->describeUser($user), $this->describePage($title), [
+                'revision_count' => $revCount, 'imported_revision_count' => $sRevCount,
+                'foreign_title' => $foreignTitle->getFullText(),
+            ]
+        ));
     }
 
     /**
@@ -111,12 +104,10 @@ class ArticleAlert extends DiscordAlert implements ArticleRevisionVisibilitySetH
             return;
         }
 
-        $msg = wfMessage(
-            'discord-articlemergecomplete',
-            $this->formatUserLink($user),
-            $this->formatMarkdownLink($targetTitle, $targetTitle->getCanonicalURL()),
-            $this->formatMarkdownLink($destTitle, $destTitle->getCanonicalURL())
-        )->inContentLanguage()->plain();
-        $this->sendAlert($hookName, $msg, time());
+        $this->sendEvent(new WebhookEvent(
+            $hookName, time(), $this->describeUser($user), $this->describePage($destTitle), [
+                'source_page' => $this->describePage($targetTitle),
+            ]
+        ));
     }
 }

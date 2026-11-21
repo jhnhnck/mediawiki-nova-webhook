@@ -45,9 +45,10 @@ class UserAlert extends DiscordAlert implements LocalUserCreatedHook, BlockIpCom
             return;
         }
 
-        $msg = wfMessage('discord-localusercreated', $this->formatUserLink($user))
-            ->inContentLanguage()->plain();
-        $this->sendAlert($hookName, $msg, (int)wfTimestamp(TS_UNIX, $user->getRegistration()));
+        $this->sendEvent(new WebhookEvent(
+            $hookName, (int)wfTimestamp(TS_UNIX, $user->getRegistration()),
+            $this->describeUser($user), null, ['autocreated' => (bool)$autocreated]
+        ));
     }
 
     /**
@@ -61,29 +62,16 @@ class UserAlert extends DiscordAlert implements LocalUserCreatedHook, BlockIpCom
             return;
         }
 
-        $expiry = $block->getExpiry();
-        if ($expires = strtotime($expiry)) {
-            $expiryMsg = sprintf('%s', date(wfMessage('discord-blocktimeformat')->inContentLanguage()->text(), $expires));
-        } else {
-            $expiryMsg = $expiry;
-        }
-
         $target = $block->getTargetUserIdentity();
-        if ($target !== null) {
-            $targetLinks = $this->formatUserLink($this->userFactory->newFromUserIdentity($target));
-        } else {
-            $targetName = $block->getTargetName();
-            $targetLinks = wfMessage('discord-userlinks', $targetName, 'n/a', 'n/a')->inContentLanguage()->text();
-        }
-
-        $msg = wfMessage(
-            'discord-blockipcomplete',
-            $this->formatUserLink($user),
-            $targetLinks,
-            $this->formatMessage($block->getReasonComment()->text),
-            $expiryMsg
-        )->inContentLanguage()->plain();
-        $this->sendAlert($hookName, $msg, (int)wfTimestamp(TS_UNIX, $block->getTimestamp()));
+        $targetData = $target !== null
+            ? $this->describeUser($this->userFactory->newFromUserIdentity($target))
+            : ['id' => null, 'name' => $block->getTargetName(), 'url' => null,
+                'talk_url' => null, 'contributions_url' => null];
+        $this->sendEvent(new WebhookEvent(
+            $hookName, (int)wfTimestamp(TS_UNIX, $block->getTimestamp()), $this->describeUser($user), null, [
+                'target' => $targetData, 'reason' => $block->getReasonComment()->text, 'expiry' => $block->getExpiry(),
+            ]
+        ));
     }
 
     /**
@@ -98,16 +86,15 @@ class UserAlert extends DiscordAlert implements LocalUserCreatedHook, BlockIpCom
         }
 
         $target = $block->getTargetUserIdentity();
-        if ($target !== null) {
-            $targetLinks = $this->formatUserLink($this->userFactory->newFromUserIdentity($target));
-        } else {
-            $targetName = $block->getTargetName();
-            $targetLinks = wfMessage('discord-userlinks', $targetName, 'n/a', 'n/a')->inContentLanguage()->text();
-        }
-
-        $msg = wfMessage('discord-unblockusercomplete', $this->formatUserLink($user), $targetLinks)
-            ->inContentLanguage()->text();
-        $this->sendAlert($hookName, $msg, (int)wfTimestamp(TS_UNIX, $block->getTimestamp()));
+        $targetData = $target !== null
+            ? $this->describeUser($this->userFactory->newFromUserIdentity($target))
+            : ['id' => null, 'name' => $block->getTargetName(), 'url' => null,
+                'talk_url' => null, 'contributions_url' => null];
+        $this->sendEvent(new WebhookEvent(
+            $hookName, time(), $this->describeUser($user), null, [
+                'target' => $targetData,
+            ]
+        ));
     }
 
     /**
@@ -130,14 +117,11 @@ class UserAlert extends DiscordAlert implements LocalUserCreatedHook, BlockIpCom
             $user = $this->userFactory->newFromUserIdentity($user);
         }
 
-        $msg = wfMessage(
-            'discord-usergroupschanged',
-            $this->formatUserLink($performer),
-            $this->formatUserLink($user),
-            $this->formatMessage($reason ?: ''),
-            ((count($added) > 0) ? ('+ ' . implode(', ', $added)) : ''),
-            ((count($removed) > 0) ? ('- ' . implode(', ', $removed)) : '')
-        )->inContentLanguage()->plain();
-        $this->sendAlert($hookName, $msg, time());
+        $this->sendEvent(new WebhookEvent(
+            $hookName, time(), $this->describeUser($performer), null, [
+                'target' => $this->describeUser($user), 'reason' => $reason ?: '',
+                'added' => array_values($added), 'removed' => array_values($removed),
+            ]
+        ));
     }
 }

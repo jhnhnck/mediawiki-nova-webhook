@@ -32,8 +32,8 @@ class PageSaveCompleteHookTest extends NovaDiscordIntegrationTestCase {
         $expectedPayload = '{"content":"[' . $username . '](<https://novadiscord.local/wiki/User:' . $userScored . '>) ([t](<https://novadiscord.local/wiki/User_talk:' . $userScored . '>)|[c](<https://novadiscord.local/wiki/Special:Contributions/' . $userScored . '>)) created [NovaTestPageCreate](<https://novadiscord.local/wiki/NovaTestPageCreate>) ([diff](<https://novadiscord.local/index.php?title=NovaTestPageCreate&diff=prev&oldid=1>)) (45) `Created page`\n```diff\n- \n+ Not to be confused with [[NovaTestPageEdit]].\n```","allowed_mentions":{"parse":[]}}';
 
         // verify webhook payload
-        $this->assertCount(1, $this->mockHttpFactory->getCaptured());
-        $payload = $this->mockHttpFactory->getCaptured()[0];
+        $this->assertCount(1, $this->getDiscordRequests());
+        $payload = $this->getDiscordRequests()[0];
         $this->assertSame('POST', $payload['method']);
         $this->assertSame('application/json', $payload['headers']['Content-Type']);
         $this->assertSame(getenv('NOVA_WEBHOOK_URL'), $payload['url']);
@@ -66,7 +66,7 @@ class PageSaveCompleteHookTest extends NovaDiscordIntegrationTestCase {
         $expectedPayload = '{"content":"[' . $username . '](<https://novadiscord.local/wiki/User:' . $userScored . '>) ([t](<https://novadiscord.local/wiki/User_talk:' . $userScored . '>)|[c](<https://novadiscord.local/wiki/Special:Contributions/' . $userScored . '>)) edited [NovaTestPageMinor](<https://novadiscord.local/wiki/NovaTestPageMinor>) ([diff](<https://novadiscord.local/index.php?title=NovaTestPageMinor&diff=prev&oldid=2>)) (m) (+12) `Fixed typo`","allowed_mentions":{"parse":[]}}';
 
         // verify webhook payload
-        $payload = $this->mockHttpFactory->getCaptured()[0];
+        $payload = $this->getDiscordRequests()[0];
         $this->assertNotNull($payload, 'Webhook payload should be captured on minor edit');
         $this->assertEquals($expectedPayload, $payload['options']['postData'], 'Minor edit webhook payload should not include diff block');
     }
@@ -94,7 +94,7 @@ class PageSaveCompleteHookTest extends NovaDiscordIntegrationTestCase {
         $expectedPayload = '{"content":"[' . $username . '](<https://novadiscord.local/wiki/User:' . $userScored . '>) ([t](<https://novadiscord.local/wiki/User_talk:' . $userScored . '>)|[c](<https://novadiscord.local/wiki/Special:Contributions/' . $userScored . '>)) edited [NovaTestPageEdit](<https://novadiscord.local/wiki/NovaTestPageEdit>) ([diff](<https://novadiscord.local/index.php?title=NovaTestPageEdit&diff=prev&oldid=2>)) (+44) `Added content`\n```diff\n- TBD\n+ The quick brown fox jumped over the lazy churg.\n```","allowed_mentions":{"parse":[]}}';
 
         // verify webhook payload
-        $payload = $this->mockHttpFactory->getCaptured()[0];
+        $payload = $this->getDiscordRequests()[0];
         $this->assertNotNull($payload, 'Webhook payload should be captured on page edit');
         $this->assertEquals($expectedPayload, $payload['options']['postData'], 'Webhook payload for page edit should match expected output');
     }

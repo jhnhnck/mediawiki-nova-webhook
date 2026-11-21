@@ -16,7 +16,8 @@ return [
             new ServiceOptions(
                 NovaDiscordConfig::CONSTRUCTOR_OPTIONS,
                 $services->getMainConfig()
-            )
+            ),
+            $services->getService('NovaDiscord.LoggerSpi')->getLogger('nova-discord')
         );
     },
     // LoggerFactory is a static facade and not always a registered service in all MW versions;

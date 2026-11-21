@@ -33,7 +33,7 @@ class PageDeleteCompleteHookTest extends NovaDiscordIntegrationTestCase {
         $expectedPayload = '{"content":"[' . $username . '](<https://novadiscord.local/wiki/User:' . $userScored . '>) ([t](<https://novadiscord.local/wiki/User_talk:' . $userScored . '>)|[c](<https://novadiscord.local/wiki/Special:Contributions/' . $userScored . '>)) deleted [NovaTestPageDelete](<https://novadiscord.local/wiki/NovaTestPageDelete>) `Deleted page` (1 revisions deleted)","allowed_mentions":{"parse":[]}}';
 
         // verify webhook payload
-        $payload = $this->mockHttpFactory->getCaptured()[0];
+        $payload = $this->getDiscordRequests()[0];
         $this->assertNotNull($payload, 'Webhook payload should be captured on page delete');
         $this->assertEquals($expectedPayload, $payload['options']['postData'], 'Webhook payload for page delete should match expected output');
     }

@@ -21,7 +21,7 @@ class LocalUserCreatedHookTest extends NovaDiscordIntegrationTestCase {
         $this->assertStatusGood($status);
         $this->runDeferredUpdates();
         $this->assertTrue($user->isRegistered());
-        $this->assertCount(1, $this->mockHttpFactory->getCaptured());
+        $this->assertCount(1, $this->getDiscordRequests());
 
         // build expected payload
         $username = $user->getName();
@@ -29,7 +29,7 @@ class LocalUserCreatedHookTest extends NovaDiscordIntegrationTestCase {
         $expectedPayload = '{"content":"[' . $username . '](<https://novadiscord.local/wiki/User:' . $userScored . '>) ([t](<https://novadiscord.local/wiki/User_talk:' . $userScored . '>)|[c](<https://novadiscord.local/wiki/Special:Contributions/' . $userScored . '>)) registered","allowed_mentions":{"parse":[]}}';
 
         // verify webhook payload
-        $captured = $this->mockHttpFactory->getCaptured();
+        $captured = $this->getDiscordRequests();
         $this->assertNotEmpty($captured, 'Webhook payload should be captured on user creation');
         $payload = $captured[0];
 

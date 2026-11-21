@@ -45,96 +45,68 @@ abstract class DiscordAlert {
         $this->logger = $loggerSpi->getLogger('nova-discord');
     }
 
-    // Discord rejects messages whose content exceeds 2000 characters
-    private const DISCORD_MAX_MESSAGE = 2000;
-
-    // handles sending a webhook to Discord
-    protected function sendAlert(string $hookName, string $msg, int $timestamp): void {
-        $this->logger->debug('Triggering discord webhook with ' . $hookName . ' and ' . $msg);
-
-        $urls = $this->novaConfig->getWebhooksForHook($hookName);
-        if ($urls === []) {
-            return;
-        }
-
-        // Normalize whitespace in the message header; preserve the diff block if present
-        $diffSep = "\n```diff\n";
-        if (($sepPos = strpos($msg, $diffSep)) !== false) {
-            $msg = preg_replace('/\s+/', ' ', trim(substr($msg, 0, $sepPos))) . substr($msg, $sepPos);
-        } else {
-            $msg = preg_replace('/\s+/', ' ', trim($msg));
-        }
-
-        // Discord drops the message if content is too long; truncate so it still sends
-        if (mb_strlen($msg) > self::DISCORD_MAX_MESSAGE) {
-            $this->logger->warning(
-                'Discord message for ' . $hookName . ' exceeds limit ('
-                . mb_strlen($msg) . ' > ' . self::DISCORD_MAX_MESSAGE . '); truncating'
-            );
-            $msg = self::truncateForDiscord($msg, self::DISCORD_MAX_MESSAGE);
-        }
-
-        // webhook payload
-        $json_data = [
-            'content' => $msg,
-            'allowed_mentions' => [
-                'parse' => []
-            ]
-        ];
-
-        try {
-            $postData = json_encode($json_data, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        } catch (\JsonException $e) {
-            $this->logger->error('Failed to encode Discord payload for ' . $hookName . ': ' . $e->getMessage());
-            return;
-        }
-
-        foreach ($urls as $hook) {
-            $request = $this->httpFactory->create($hook, [
-                'method' => 'POST',
-                'postData' => $postData,
-            ], __METHOD__);
-            $request->setHeader('Content-Type', 'application/json');
-
-            // route transport / Discord-side errors to the nova-discord log channel.
-            // safe from feedback loops: $logger->error() does not throw, so it does
-            // not trigger the LogException hook. ErrorAlert injects a NullLogger,
-            // so its own send failures stay quiet by design.
-            $status = $request->execute();
-            if (!$status->isOK()) {
-                $body = self::truncateString((string)$request->getContent(), 200);
-                $this->logger->error(
-                    'Discord webhook failed for ' . $hookName
-                    . ' (HTTP ' . $request->getStatus() . '): ' . $body
-                );
+    protected function sendEvent(WebhookEvent $event): void {
+        $destinations = $this->novaConfig->getDestinationsForHook($event->hook);
+        $payloads = [];
+        foreach ($destinations as $destination) {
+            $format = $destination['format'];
+            try {
+                if (!isset($payloads[$format])) {
+                    $payload = $format === 'discord'
+                        ? (new DiscordRenderer($this->novaConfig->getMaxChars()))->render($event)
+                        : $event->toArray();
+                    $payloads[$format] = json_encode(
+                        $payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+                    );
+                }
+                $request = $this->httpFactory->create($destination['url'], [
+                    'method' => 'POST', 'postData' => $payloads[$format],
+                ], __METHOD__);
+                $request->setHeader('Content-Type', 'application/json');
+                $status = $request->execute();
+                if (!$status->isOK()) {
+                    $this->logger->error('Webhook delivery failed for {hook} ({format}, HTTP {status})', [
+                        'hook' => $event->hook, 'format' => $format, 'status' => $request->getStatus(),
+                    ]);
+                }
+            } catch (\Throwable $error) {
+                // error details can contain destination credentials or event content
+                $this->logger->error('Webhook delivery failed for {hook} ({format}, {exception})', [
+                    'hook' => $event->hook, 'format' => $format, 'exception' => get_class($error),
+                ]);
             }
         }
     }
 
-    // truncates a message to fit Discord's content limit, preserving the diff
-    // code fence so the message still renders cleanly when cut inside a diff block
-    private static function truncateForDiscord(string $msg, int $limit): string {
-        if (mb_strlen($msg) <= $limit) {
-            return $msg;
-        }
+    protected function describeUser(User $user): array {
+        $contributions = SpecialPage::getTitleFor('Contributions', $user->getName())->getCanonicalURL();
+        return [
+            'id' => $user->getId(), 'name' => $user->getName(),
+            'url' => $user->isAnon() ? $contributions : $user->getUserPage()->getCanonicalURL(),
+            'talk_url' => $user->getTalkPage()->getCanonicalURL(), 'contributions_url' => $contributions,
+        ];
+    }
 
-        $diffSep = "\n```diff\n";
-        $closeFence = "\n```";
-        $marker = "\n// ... (truncated)";
-        $sepPos = mb_strpos($msg, $diffSep);
+    protected function describePage(\MediaWiki\Title\Title $title, ?int $id = null): array {
+        return [
+            'id' => $id ?? $title->getArticleID(), 'namespace' => $title->getNamespace(),
+            'title' => $title->getPrefixedText(), 'url' => $title->getCanonicalURL(),
+        ];
+    }
 
-        // no fence, or the cut would land before it: plain ellipsis truncate
-        if ($sepPos === false || $sepPos >= $limit - mb_strlen($diffSep)) {
-            return mb_substr($msg, 0, $limit - 3) . '...';
-        }
-
-        $reserveTail = mb_strlen($marker) + mb_strlen($closeFence);
-        return mb_substr($msg, 0, $limit - $reserveTail) . $marker . $closeFence;
+    protected function describeRevision(RevisionRecord $revision, ?RevisionRecord $parent): array {
+        $title = $this->titleFactory->newFromPageIdentity($revision->getPage());
+        return [
+            'id' => $revision->getId(), 'parent_id' => $revision->getParentId(),
+            'size' => $revision->getSize(), 'delta' => $parent ? $revision->getSize() - $parent->getSize() : null,
+            'minor' => $revision->isMinor(),
+            'url' => $title->getCanonicalURL(['diff' => 'prev', 'oldid' => $revision->getId()]),
+        ];
     }
 
     // checks if alert should be sent based on bot/namespace/user filters
     protected function isEnabled(string $hookName, ?int $namespace, User $user): bool {
-        if ($this->novaConfig->getWebhooksForHook($hookName) === []) {
+        if ($this->novaConfig->getDestinationsForHook($hookName) === []) {
             return false;
         }
 
@@ -159,95 +131,15 @@ abstract class DiscordAlert {
     /* --- Util Functions --- */
 
     protected static function truncateString(string $text, int $length): string {
-        if (is_int($length) && $length > 0 && mb_strlen($text) > $length) {
+        if ($length > 0 && mb_strlen($text) > $length) {
             return mb_substr($text, 0, $length) . '...';
         }
 
         return $text;
     }
 
-    protected static function formatBytes(int $bytes, int $precision = 2): string {
-        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-        $bytes = max($bytes, 0);
-        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
-        $pow = min($pow, count($units) - 1);
-        $bytes /= (1 << (10 * $pow));
-        return round($bytes, $precision) . ' ' . $units[$pow];
-    }
-
-    /**
-     * Creates a formatted markdown link based on text and given URL.
-     * Link previews are always suppressed to keep Discord clean.
-     */
-    protected static function formatMarkdownLink(string $text, string $url): string {
-        return "[" . $text . "](<" . $url . ">)";
-    }
-
-    /**
-     * Returns a markdown-formatted string that links to the user's page and their talk & contrib pages
-     */
-    protected function formatUserLink(User $user): string {
-        $contribLabel = wfMessage('discord-contribs')->inContentLanguage()->text();
-        $contribLink = SpecialPage::getTitleFor('Contributions', $user->getName())->getCanonicalURL();
-
-        // fall back to contributions link if its an anon user
-        $userLabel = $this->truncateString($user->getName(), 25);
-        $userLink = !$user->isAnon() ? $user->getUserPage()->getCanonicalURL() : $contribLink;
-
-        $talkLabel = wfMessage('discord-talk')->inContentLanguage()->text();
-        $talkLink = $user->getTalkPage()->getCanonicalURL();
-
-        return wfMessage(
-            'discord-userlinks',
-            $this->formatMarkdownLink($userLabel, $userLink),
-            $this->formatMarkdownLink($talkLabel, $talkLink),
-            $this->formatMarkdownLink($contribLabel, $contribLink),
-        )->inContentLanguage()->text();
-    }
-
-    protected function formatMessage(string $message): string {
-        // TODO: adjust as needed
-        $invalidChars = '`@';
-
-        if (mb_strlen($message ?? '') == 0) {
-            return '';
-        }
-
-        $message = preg_replace('/\s+/', ' ', trim($message));
-        $trimmed = $this->truncateString(addcslashes($message, $invalidChars), $this->novaConfig->getMaxChars());
-
-        return '`' . $trimmed . '`';
-    }
-
     protected function getParentRevision(RevisionRecord $revision): ?RevisionRecord {
         return $revision->getParentId() ? $this->revLookup->getPreviousRevision($revision) : null;
-    }
-
-    /** create formatted text for a specific revision */
-    protected function formatRevisionText(RevisionRecord $revision, ?RevisionRecord $parent): string {
-        $linkTarget = $revision->getPageAsLinkTarget();
-        $title = $this->titleFactory->newFromLinkTarget($linkTarget);
-
-        $diffUrl = $title->getCanonicalURL([
-            'diff' => 'prev',
-            'oldid' => $revision->getId(),
-        ]);
-
-        $diff = $this->formatMarkdownLink(wfMessage('discord-diff')->inContentLanguage()->text(), $diffUrl);
-        $minor = $revision->isMinor() ? wfMessage('discord-minor')->inContentLanguage()->text() : '';
-
-        // TODO: not happy with this, can we get this easier?
-        $delta = null;
-        if ($revision->getParentId()) {
-            if ($parent) {
-                $delta = $revision->getSize() - $parent->getSize();
-            }
-        }
-
-        $sizeText = wfMessage('discord-size', $delta !== null ? sprintf('%+d', $delta) : (string)$revision->getSize())
-            ->inContentLanguage()->text();
-
-        return wfMessage('discord-revisionlinks', $diff, $minor, $sizeText)->inContentLanguage()->text();
     }
 
     /**
@@ -278,7 +170,7 @@ abstract class DiscordAlert {
 
         try {
             $diff = new Diff($oldLines, $newLines);
-        } catch (ComplexityException $e) {
+        } catch (ComplexityException) {
             return null;
         }
 

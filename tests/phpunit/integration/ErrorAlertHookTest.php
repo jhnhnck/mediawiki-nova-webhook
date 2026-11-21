@@ -26,7 +26,10 @@ class ErrorAlertHookTest extends NovaDiscordIntegrationTestCase {
      */
     private function buildAlert(array $overrides): ErrorAlert {
         $defaults = [
-            'DiscordWebhooks' => [['url' => self::WEBHOOK_URL, 'hooks' => ['LogException']]],
+            'DiscordWebhooks' => [
+                ['url' => self::WEBHOOK_URL, 'hooks' => ['LogException']],
+                ['url' => 'https://events.example.test/errors', 'format' => 'json', 'hooks' => ['LogException']],
+            ],
             'DiscordDefaultHooks' => null,
             'DiscordNoBots' => true,
             'DiscordNoMinor' => false,
@@ -56,7 +59,7 @@ class ErrorAlertHookTest extends NovaDiscordIntegrationTestCase {
     public function testEmptyDenyListPostsWebhook(): void {
         $alert = $this->buildAlert(['DiscordExceptionDenyList' => []]);
         $alert->onLogException(new RuntimeException('NovaTest empty deny ' . uniqid()), false);
-        $this->assertCount(1, $this->mockHttpFactory->getCaptured(),
+        $this->assertCount(1, $this->getDiscordRequests(),
             'Empty deny-list should not suppress any exception');
     }
 
@@ -66,10 +69,10 @@ class ErrorAlertHookTest extends NovaDiscordIntegrationTestCase {
             ['DiscordWebhooks' => [['url' => self::WEBHOOK_URL]]],
         ] as $overrides) {
             $this->buildAlert($overrides)->onLogException(new RuntimeException('Private event'), false);
-            $this->assertCount(0, $this->mockHttpFactory->getCaptured());
+            $this->assertCount(0, $this->getDiscordRequests());
         }
         $this->buildAlert([])->onLogException(new RuntimeException('Suppressed event'), true);
-        $this->assertCount(0, $this->mockHttpFactory->getCaptured());
+        $this->assertCount(0, $this->getDiscordRequests());
     }
 
     public function testRepeatedExceptionIsRateLimited(): void {
@@ -78,13 +81,13 @@ class ErrorAlertHookTest extends NovaDiscordIntegrationTestCase {
         $error = new RuntimeException('Repeated exception ' . uniqid());
         $alert->onLogException($error, false);
         $alert->onLogException($error, false);
-        $this->assertCount(1, $this->mockHttpFactory->getCaptured());
+        $this->assertCount(1, $this->getDiscordRequests());
     }
 
     public function testBareClassEntrySuppressesAllInstances(): void {
         $alert = $this->buildAlert(['DiscordExceptionDenyList' => [RuntimeException::class]]);
         $alert->onLogException(new RuntimeException('NovaTest bare class ' . uniqid()), false);
-        $this->assertCount(0, $this->mockHttpFactory->getCaptured(),
+        $this->assertCount(0, $this->getDiscordRequests(),
             'Bare class entry should suppress matching exception');
     }
 
@@ -96,12 +99,12 @@ class ErrorAlertHookTest extends NovaDiscordIntegrationTestCase {
         // matching message should be suppressed
         $alert = $this->buildAlert(['DiscordExceptionDenyList' => $denyList]);
         $alert->onLogException(new RuntimeException('NovaTest IGNORE-ME ' . uniqid()), false);
-        $this->assertCount(0, $this->mockHttpFactory->getCaptured(),
+        $this->assertCount(0, $this->getDiscordRequests(),
             'Matching messageContains should suppress the alert');
 
         // non-matching message in same class should still post
         $alert->onLogException(new RuntimeException('NovaTest report-me ' . uniqid()), false);
-        $this->assertCount(1, $this->mockHttpFactory->getCaptured(),
+        $this->assertCount(1, $this->getDiscordRequests(),
             'Non-matching message of same class should still post');
     }
 
@@ -116,7 +119,7 @@ class ErrorAlertHookTest extends NovaDiscordIntegrationTestCase {
             new PreconditionException('NovaTest precondition ' . uniqid()),
             false
         );
-        $this->assertCount(0, $this->mockHttpFactory->getCaptured(),
+        $this->assertCount(0, $this->getDiscordRequests(),
             'Deny-listed exception must remain suppressed when private alerts toggle on later');
     }
 }
