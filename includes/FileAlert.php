@@ -7,12 +7,12 @@
 namespace MediaWiki\Extension\NovaDiscord;
 
 use MediaWiki\Hook\FileDeleteCompleteHook;
-use MediaWiki\Hook\FileUndeleteCompleteHook;
-use MediaWiki\Hook\UploadCompleteHook;
 use MediaWiki\Http\HttpRequestFactory;
 use MediaWiki\Logger\Spi as LoggerSpi;
 use MediaWiki\Revision\RevisionLookup;
+use MediaWiki\Specials\Hook\FileUndeleteCompleteHook;
 use MediaWiki\Title\TitleFactory;
+use MediaWiki\Upload\Hook\UploadCompleteHook;
 use MediaWiki\User\UserFactory;
 use MediaWiki\Utils\UrlUtils;
 

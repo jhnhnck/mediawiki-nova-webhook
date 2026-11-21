@@ -2,7 +2,7 @@
 
 ## open
 
-No confirmed MediaWiki 1.46 runtime defects from this planning pass. Seven deprecated interface imports are confirmed migration work; seven skipped tests and a manually dispatched visibility test are verification gaps. See compatibility.md and phases 0-1. Do not classify unchanged hook signatures as breakages.
+B001 - important, fix-in-phase-5: composer check reproduces 53 pre-existing codesniffer errors on both bda6659 and phase 0. Evidence: /tmp/nova-baseline-check.log and /tmp/nova-phase0-check.log. Resolve remaining lint debt in a separate housekeeping commit before release readiness. Seven skipped hook tests remain phase 1 work.
 
 ## closed
 

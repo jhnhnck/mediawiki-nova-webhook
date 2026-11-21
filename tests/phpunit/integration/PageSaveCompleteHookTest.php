@@ -32,7 +32,11 @@ class PageSaveCompleteHookTest extends NovaDiscordIntegrationTestCase {
         $expectedPayload = '{"content":"[' . $username . '](<https://novadiscord.local/wiki/User:' . $userScored . '>) ([t](<https://novadiscord.local/wiki/User_talk:' . $userScored . '>)|[c](<https://novadiscord.local/wiki/Special:Contributions/' . $userScored . '>)) created [NovaTestPageCreate](<https://novadiscord.local/wiki/NovaTestPageCreate>) ([diff](<https://novadiscord.local/index.php?title=NovaTestPageCreate&diff=prev&oldid=1>)) (45) `Created page`\n```diff\n- \n+ Not to be confused with [[NovaTestPageEdit]].\n```","allowed_mentions":{"parse":[]}}';
 
         // verify webhook payload
+        $this->assertCount(1, $this->mockHttpFactory->getCaptured());
         $payload = $this->mockHttpFactory->getCaptured()[0];
+        $this->assertSame('POST', $payload['method']);
+        $this->assertSame('application/json', $payload['headers']['Content-Type']);
+        $this->assertSame(getenv('NOVA_WEBHOOK_URL'), $payload['url']);
         $this->assertNotNull($payload, 'Webhook payload should be captured on page creation');
         $this->assertEquals($expectedPayload, $payload['options']['postData'], 'Webhook payload for page creation should match expected output');
     }

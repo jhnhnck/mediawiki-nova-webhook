@@ -7,8 +7,8 @@
 namespace MediaWiki\Extension\NovaDiscord;
 
 use MediaWiki\Exception\ErrorPageError;
+use MediaWiki\Exception\Hook\LogExceptionHook;
 use MediaWiki\Exception\HttpError;
-use MediaWiki\Hook\LogExceptionHook;
 use MediaWiki\Http\HttpRequestFactory;
 use MediaWiki\Logger\Spi as LoggerSpi;
 use MediaWiki\Revision\RevisionLookup;

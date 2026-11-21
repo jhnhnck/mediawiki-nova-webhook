@@ -23,3 +23,18 @@
 - Preserved the plan directory, historical compatibility findings, and existing phase states; application code remains unchanged
 
 Phase starts, completion evidence, retrospectives, and plan revisions append here. Phase state is maintained only in plan.md's final status table.
+
+## 2026-11-21 - phase 0 started
+
+Execution authorized for all remaining phases on REL1_46 at bda6659. Scope: runnable 1.46 baseline, canonical imports, core-owned PHPUnit dependencies, handler loading and real save interception. Baseline has seven skipped tests; runtime failures have not yet been measured.
+
+## 2026-11-21 - phase 0 verification and review
+
+- Core d88c752b54c6052fb4cce261b140c88589420eed, PHP 8.4.28, core PHPUnit 9.6.34; all six handlers resolve through HookContainer and injected services
+- Initial image suite: 39 tests / 62 assertions / 7 skips; current mounted suite with registration/request assertions: 41 tests / 84 assertions / 7 skips, exit 0
+- Restricted runner discovery to tests/phpunit: mounting the checkout otherwise traversed protected host Git objects; also avoids discovering vendor tests
+- Enabled pipeline error propagation and replaced the tr/head password pipeline to avoid its expected SIGPIPE; runner reports core/runtime/dependency versions and accepts PHPUnit arguments
+- Extension dev PHPUnit constraint is ^9.6; core owns integration execution, independent extension install supplies lint/Phan tooling (resolved local PHPUnit 9.6.39 is not the core runner)
+- PHP syntax and zsh syntax passed. composer check fails on 53 existing codesniffer errors; an archived bda6659 checkout reproduced the same 53 errors with the same tools. New import-order warnings were corrected; the new wiring test passes codesniffer
+- Reviewed phase diff against bda6659 for requirements, import aliases, runner failure propagation, service resolution, and HTTP interception; no remaining phase-specific findings. Existing lint debt is tracked for final readiness, not silently counted as passing
+- Runtime compatibility slice is verified; remaining seven skipped hook tests belong to phase 1. No Discord requests, push, publication, or deployment

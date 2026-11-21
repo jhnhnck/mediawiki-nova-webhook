@@ -7,13 +7,13 @@
 namespace MediaWiki\Extension\NovaDiscord;
 
 use MediaWiki\Context\RequestContext;
-use MediaWiki\Hook\AfterImportPageHook;
 use MediaWiki\Hook\ArticleMergeCompleteHook;
-use MediaWiki\Hook\ArticleRevisionVisibilitySetHook;
 use MediaWiki\Http\HttpRequestFactory;
+use MediaWiki\Import\Hook\AfterImportPageHook;
 use MediaWiki\Logger\Spi as LoggerSpi;
 use MediaWiki\Page\Hook\ArticleProtectCompleteHook;
 use MediaWiki\Revision\RevisionLookup;
+use MediaWiki\RevisionDelete\Hook\ArticleRevisionVisibilitySetHook;
 use MediaWiki\Title\TitleFactory;
 use MediaWiki\User\UserFactory;
 use MediaWiki\Utils\UrlUtils;

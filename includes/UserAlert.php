@@ -8,11 +8,11 @@ namespace MediaWiki\Extension\NovaDiscord;
 
 use MediaWiki\Auth\Hook\LocalUserCreatedHook;
 use MediaWiki\Block\DatabaseBlock;
-use MediaWiki\Hook\BlockIpCompleteHook;
-use MediaWiki\Hook\UnblockUserCompleteHook;
 use MediaWiki\Http\HttpRequestFactory;
 use MediaWiki\Logger\Spi as LoggerSpi;
 use MediaWiki\Revision\RevisionLookup;
+use MediaWiki\Specials\Hook\BlockIpCompleteHook;
+use MediaWiki\Specials\Hook\UnblockUserCompleteHook;
 use MediaWiki\Title\TitleFactory;
 use MediaWiki\User\Hook\UserGroupsChangedHook;
 use MediaWiki\User\User;

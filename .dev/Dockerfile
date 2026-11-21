@@ -5,8 +5,8 @@ ENV APP_HOME='/app'
 ENV LANG='en_US.UTF-8'
 
 ARG ASSETS='.dev/assets'
-ARG MEDIAWIKI_MAJOR_VERSION='1.44'
-ARG MEDIAWIKI_BRANCH='REL1_44'
+ARG MEDIAWIKI_MAJOR_VERSION='1.46'
+ARG MEDIAWIKI_BRANCH='REL1_46'
 
 # system packages
 RUN --mount=type=cache,sharing=locked,target=/var/lib/apt \
