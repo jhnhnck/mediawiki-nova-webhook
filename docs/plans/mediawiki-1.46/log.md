@@ -52,3 +52,16 @@ Parent 314a490 on REL1_46. Replace skipped operations and manual dispatch with c
 - Automatic group changes stay silent. Regression tests cover bots, namespace filtering, empty destinations, excluded hooks, null/minor edits, exception opt-in, explicit routing, suppressed exceptions, deny-list, and repeated exception limiting
 - Enabled CLI APCu in the test runner and proved the same exception emits once. Null saves report the expected edit-no-change warning while remaining OK
 - Reviewed actual diff for test isolation, real operation coverage, actor context, valid core permissions, expected additional notifications, and HTTP interception. No phase-specific blockers remain; existing lint debt B001 remains assigned to phase 5
+
+## 2026-11-21 - phase 2 started
+
+Parent 9981de3 on REL1_46. Preserve 50-test behavior baseline while reducing page construction, file history retrieval, and parent lookups; map event timestamp sources for structured output.
+
+## 2026-11-21 - phase 2 verification and review
+
+- Full suite remains 50 tests / 143 assertions / zero skips, exit 0 (/tmp/nova-phase2-tests.log); existing exact Discord payload assertions remain unchanged
+- Page deletion/restoration now construct Title directly from PageIdentity. Upload reversion detection calls getHistory(1); inspected core LocalFile applies the limit to the oldimage SQL query
+- Edit handling obtains the parent once and passes it to both revision metadata and diff helpers; neither formatting helper performs another lookup. Routing rejects hooks without eligible endpoints before diff/history work
+- Timestamp source map for phase 3: saves/moves use revision event time; deletion/restoration use the supplied ManualLogEntry timestamp; uploads use file timestamp; block uses block timestamp; unblock/file-version deletion use current operation time because their hook supplies no log/event timestamp. Import, merge, visibility, protection, rename, and manual groups likewise require hook-time fallback
+- Kept existing hooks. PageHistoryVisibilityChanged offers explicit performer/log timestamp but adoption would require separate cause/timing/suppression parity work; no simultaneous hook/event registration. Kept upload hook rather than adding FileUpload
+- Reviewed actual phase diff for lookup reuse, missing-parent behavior, namespace filtering, title identity, and HTTP routing. No phase-specific defects; B001 lint debt remains for final readiness

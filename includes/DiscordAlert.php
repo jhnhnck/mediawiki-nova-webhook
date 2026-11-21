@@ -26,7 +26,7 @@ use Wikimedia\Diff\DiffOpDelete;
 abstract class DiscordAlert {
     private HttpRequestFactory $httpFactory;
     private RevisionLookup $revLookup;
-    private TitleFactory $titleFactory;
+    protected TitleFactory $titleFactory;
     private UrlUtils $urlUtils;
     protected LoggerInterface $logger;
     protected NovaDiscordConfig $novaConfig;
@@ -134,6 +134,10 @@ abstract class DiscordAlert {
 
     // checks if alert should be sent based on bot/namespace/user filters
     protected function isEnabled(string $hookName, ?int $namespace, User $user): bool {
+        if ($this->novaConfig->getWebhooksForHook($hookName) === []) {
+            return false;
+        }
+
         if ($this->novaConfig->isNoBots() && $user->isBot()) {
             return false;
         }
@@ -215,8 +219,12 @@ abstract class DiscordAlert {
         return '`' . $trimmed . '`';
     }
 
+    protected function getParentRevision(RevisionRecord $revision): ?RevisionRecord {
+        return $revision->getParentId() ? $this->revLookup->getPreviousRevision($revision) : null;
+    }
+
     /** create formatted text for a specific revision */
-    protected function formatRevisionText(RevisionRecord $revision): string {
+    protected function formatRevisionText(RevisionRecord $revision, ?RevisionRecord $parent): string {
         $linkTarget = $revision->getPageAsLinkTarget();
         $title = $this->titleFactory->newFromLinkTarget($linkTarget);
 
@@ -231,7 +239,6 @@ abstract class DiscordAlert {
         // TODO: not happy with this, can we get this easier?
         $delta = null;
         if ($revision->getParentId()) {
-            $parent = $this->revLookup->getPreviousRevision($revision);
             if ($parent) {
                 $delta = $revision->getSize() - $parent->getSize();
             }
@@ -248,7 +255,7 @@ abstract class DiscordAlert {
      * Returns a markdown ```diff code block, truncated to DIFF_BLOCK_BUDGET chars.
      * Returns null if content is not text-based.
      */
-    protected function getDiffBlock(RevisionRecord $revision): ?string {
+    protected function getDiffBlock(RevisionRecord $revision, ?RevisionRecord $parent): ?string {
         $newContent = $revision->getContent(SlotRecord::MAIN);
         if (!($newContent instanceof TextContent)) {
             return null;
@@ -257,7 +264,6 @@ abstract class DiscordAlert {
 
         $parentId = $revision->getParentId();
         if ($parentId) {
-            $parent = $this->revLookup->getPreviousRevision($revision);
             $oldContent = $parent ? $parent->getContent(SlotRecord::MAIN) : null;
             $oldText = ($oldContent instanceof TextContent)
                 ? mb_convert_encoding($oldContent->getText(), 'UTF-8', 'UTF-8')

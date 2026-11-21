@@ -45,7 +45,7 @@ class FileAlert extends DiscordAlert implements UploadCompleteHook, FileDeleteCo
         }
 
         $comment = $lf->getDescription();
-        $isNewRevision = count($lf->getHistory()) > 0;
+        $isNewRevision = count($lf->getHistory(1)) > 0;
 
         $msg = wfMessage(
             'discord-uploadcomplete',

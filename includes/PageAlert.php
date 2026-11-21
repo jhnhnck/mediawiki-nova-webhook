@@ -82,16 +82,17 @@ class PageAlert extends DiscordAlert implements PageSaveCompleteHook, PageDelete
             return;
         }
 
+        $parent = $this->getParentRevision($revision);
         $msg = wfMessage(
             ($editResult->isNew() ? 'discord-create' : 'discord-edit'),
             $this->formatUserLink($user),
             $this->formatMarkdownLink($wikiPage->getTitle(), $wikiPage->getTitle()->getCanonicalURL()),
-            $this->formatRevisionText($revision),
+            $this->formatRevisionText($revision, $parent),
             $this->formatMessage($summary),
         )->inContentLanguage()->plain();
 
         if (!$revision->isMinor()) {
-            $diffBlock = $this->getDiffBlock($revision);
+            $diffBlock = $this->getDiffBlock($revision, $parent);
             if ($diffBlock !== null) {
                 $msg .= "\n" . $diffBlock;
             }
@@ -114,18 +115,17 @@ class PageAlert extends DiscordAlert implements PageSaveCompleteHook, PageDelete
         $hookName = 'PageDeleteComplete';
         $this->logger->debug('Completing hook ' . $hookName . ' on ' . $page);
 
-        // TODO: possible to remove this Title call?
         $user = $this->userFactory->newFromUserIdentity($deleter->getUser());
-        $page = $this->pageFactory->newFromTitle($page);
+        $title = $this->titleFactory->newFromPageIdentity($page);
 
-        if (!$this->isEnabled($hookName, $page->getNamespace(), $user)) {
+        if (!$this->isEnabled($hookName, $title->getNamespace(), $user)) {
             return;
         }
 
         $msg = wfMessage(
             'discord-articledelete',
             $this->formatUserLink($user),
-            $this->formatMarkdownLink($page->getTitle(), $page->getTitle()->getCanonicalURL()),
+            $this->formatMarkdownLink($title, $title->getCanonicalURL()),
             $this->formatMessage($reason),
             $archivedRevisionCount
         )->inContentLanguage()->plain();
@@ -171,7 +171,7 @@ class PageAlert extends DiscordAlert implements PageSaveCompleteHook, PageDelete
             $this->formatMarkdownLink($oldPage->getTitle(), $oldPage->getTitle()->getCanonicalURL()),
             $this->formatMarkdownLink($newPage->getTitle(), $newPage->getTitle()->getCanonicalURL()),
             $this->formatMessage($reason),
-            $this->formatRevisionText($revision),
+            $this->formatRevisionText($revision, $this->getParentRevision($revision)),
         )->inContentLanguage()->plain();
 
         $this->sendAlert($hookName, $msg, (int)wfTimestamp(TS_UNIX, $revision->getTimestamp()));
@@ -193,10 +193,10 @@ class PageAlert extends DiscordAlert implements PageSaveCompleteHook, PageDelete
         $this->logger->debug('Completing hook ' . $hookName . ' on ' . $page);
 
         $user = $this->userFactory->newFromUserIdentity($restorer->getUser());
-        $page = $this->pageFactory->newFromTitle($page);
+        $title = $this->titleFactory->newFromPageIdentity($page);
 
         // check if hook is enabled
-        if (!$this->isEnabled($hookName, $page->getNamespace(), $user)) {
+        if (!$this->isEnabled($hookName, $title->getNamespace(), $user)) {
             return;
         }
 
@@ -205,7 +205,7 @@ class PageAlert extends DiscordAlert implements PageSaveCompleteHook, PageDelete
             'discord-articleundelete',
             $this->formatUserLink($user),
             ($created ? '' : wfMessage('discord-undeleterev')->inContentLanguage()->text()),
-            $this->formatMarkdownLink($page->getTitle(), $page->getTitle()->getCanonicalURL()),
+            $this->formatMarkdownLink($title, $title->getCanonicalURL()),
             $this->formatMessage($reason),
         )->inContentLanguage()->plain();
 
