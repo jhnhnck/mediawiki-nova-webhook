@@ -8,7 +8,6 @@ namespace MediaWiki\Extension\NovaDiscord\Tests\Integration;
 
 use MediaWiki\Context\RequestContext;
 
-
 /**
  * @group Database
  * @covers \MediaWiki\Extension\NovaDiscord\ArticleAlert::onArticleRevisionVisibilitySet
@@ -21,17 +20,21 @@ class ArticleRevisionVisibilitySetHookTest extends NovaDiscordIntegrationTestCas
         $this->editPage($page, 'Content 1', 'First revision', 0, $performer->getAuthority());
         $status2 = $this->editPage($page, 'Content 2', 'Second revision', 0, $performer->getAuthority());
         $revId = $status2->getNewRevision()->getId();
+        $this->editPage($page, 'Content 3', 'Current revision', 0, $performer->getAuthority());
+        $this->runDeferredUpdates();
 
         $this->mockHttpFactory->reset();
 
         // Set performer as context user (handler reads from RequestContext)
         \RequestContext::getMain()->setUser($performer->getUser());
 
-        // Fire hook directly — MW 1.44 removed getRevisionDeleter() from services
-        $this->getServiceContainer()->getHookContainer()->run(
-            'ArticleRevisionVisibilitySet',
-            [$page->getTitle(), [$revId], [$revId => ['newBits' => 1, 'oldBits' => 0]]]
+        $list = \MediaWiki\RevisionDelete\RevisionDeleter::createList(
+            'revision', RequestContext::getMain(), $page, [$revId]
         );
+        $this->assertStatusGood($list->setVisibility([
+            'value' => [\MediaWiki\Revision\RevisionRecord::DELETED_TEXT => 1], 'comment' => 'Hide text',
+        ]));
+        $this->runDeferredUpdates();
 
         $performerUsername = $performer->getUser()->getName();
         $performerUserScored = str_replace(' ', '_', $performerUsername);

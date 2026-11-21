@@ -12,6 +12,13 @@ namespace MediaWiki\Extension\NovaDiscord\Tests\Integration;
  */
 class FileUndeleteCompleteHookTest extends NovaDiscordIntegrationTestCase {
     public function testFileUndeleteSendsWebhook(): void {
-        $this->markTestSkipped('Stubbed test');
+        $file = $this->uploadFile();
+        $this->doApiRequestWithToken(['action' => 'delete', 'title' => $file->getTitle()->getPrefixedText()]);
+        $this->mockHttpFactory->reset();
+        $this->doApiRequestWithToken([
+            'action' => 'undelete', 'title' => $file->getTitle()->getPrefixedText(), 'reason' => 'File restoration',
+        ]);
+        $this->runDeferredUpdates();
+        $this->assertNotification('File restoration', 2);
     }
 }

@@ -108,8 +108,8 @@ Write an explicit old-to-new configuration map. Default migration policy: canoni
 
 | phase | status |
 | --- | --- |
-| 0 - 1.46 compatibility baseline | verified, uncommitted |
-| 1 - hook behavior and coverage | not started |
+| 0 - 1.46 compatibility baseline | closed in 314a490 |
+| 1 - hook behavior and coverage | verified, uncommitted |
 | 2 - bounded modernization | not started |
 | 3 - structured events and dual webhook formats | not started |
 | 4 - novawebhook rebrand and migration | not started |

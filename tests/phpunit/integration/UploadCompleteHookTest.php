@@ -12,6 +12,13 @@ namespace MediaWiki\Extension\NovaDiscord\Tests\Integration;
  */
 class UploadCompleteHookTest extends NovaDiscordIntegrationTestCase {
     public function testUploadSendsWebhook(): void {
-        $this->markTestSkipped('Stubbed test');
+        $file = $this->uploadFile();
+        $this->assertTrue($file->exists());
+        $this->assertNotification('uploaded');
+        $this->mockHttpFactory->reset();
+        \MediaWiki\Utils\MWTimestamp::setFakeTime(time() + 2);
+        $this->uploadFile();
+        $this->assertNotification('uploaded');
+        \MediaWiki\Utils\MWTimestamp::setFakeTime(false);
     }
 }

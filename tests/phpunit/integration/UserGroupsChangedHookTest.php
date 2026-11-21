@@ -12,11 +12,16 @@ namespace MediaWiki\Extension\NovaDiscord\Tests\Integration;
  */
 class UserGroupsChangedHookTest extends NovaDiscordIntegrationTestCase {
     public function testUserGroupsChangedSendsWebhook(): void {
-        // TODO: This test requires complex setup to properly trigger the UserGroupsChanged hook
-        // with a valid performer. UserGroupManager->addUserToGroup() doesn't provide a way to
-        // specify the performing user, causing the hook to receive performer=false (autopromotion)
-        // which is filtered out by the hook implementation. This needs investigation into
-        // MediaWiki's SpecialUserRights or a different approach to trigger the hook.
-        $this->markTestSkipped('Requires complex setup to trigger hook with proper performer');
+        $target = $this->getMutableTestUser()->getUser();
+        $performer = $this->getTestSysop()->getUser();
+        $this->overrideConfigValue('AddGroups', ['sysop' => ['bot']]);
+        $this->getServiceContainer()->getUserGroupAssignmentService()->saveChangesToUserGroups(
+            $performer, $target, ['bot'], [], [], 'Rights reason'
+        );
+        $this->assertNotification('changed rights');
+        $this->mockHttpFactory->reset();
+        $this->getServiceContainer()->getUserGroupManager()->addUserToGroup($target, 'autoconfirmed');
+        $this->runDeferredUpdates();
+        $this->assertCount(0, $this->mockHttpFactory->getCaptured());
     }
 }

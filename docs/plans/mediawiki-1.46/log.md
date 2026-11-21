@@ -38,3 +38,17 @@ Execution authorized for all remaining phases on REL1_46 at bda6659. Scope: runn
 - PHP syntax and zsh syntax passed. composer check fails on 53 existing codesniffer errors; an archived bda6659 checkout reproduced the same 53 errors with the same tools. New import-order warnings were corrected; the new wiring test passes codesniffer
 - Reviewed phase diff against bda6659 for requirements, import aliases, runner failure propagation, service resolution, and HTTP interception; no remaining phase-specific findings. Existing lint debt is tracked for final readiness, not silently counted as passing
 - Runtime compatibility slice is verified; remaining seven skipped hook tests belong to phase 1. No Discord requests, push, publication, or deployment
+
+## 2026-11-21 - phase 1 started
+
+Parent 314a490 on REL1_46. Replace skipped operations and manual dispatch with core services/API operations, verifying delivery counts, filters, and exception gates. Baseline: 41 tests / 84 assertions / 7 skips; pre-existing lint B001 remains.
+
+## 2026-11-21 - phase 1 verification and review
+
+- Full unfiltered 1.46 suite: 50 tests / 143 assertions / zero skips, exit 0 (/tmp/nova-phase1-final.log)
+- All seven skipped tests now use real operations: WikiImporter, MergeHistory, UploadFromFile, delete/undelete APIs, RenameuserSQL, and UserGroupAssignmentService. Revision visibility uses RevisionDeleter on a non-current revision; registration uses AuthManager autocreation
+- File fixtures use distinct per-test-class names and changed upload bytes. Core correctly rejects identical reuploads and hiding current revision text; fixtures now exercise valid operations instead of bypassing those checks
+- Delivery counts: merge produces merge plus redirect edit (2); whole file deletion produces page delete only (1); old file version deletion produces file notification (1); restore produces page and file notifications (2); import produces import notification (1). Web SpecialUndelete and ApiUndelete both explicitly invoke FileUndeleteComplete after successful file restoration; API path executed, web caller checked in core source
+- Automatic group changes stay silent. Regression tests cover bots, namespace filtering, empty destinations, excluded hooks, null/minor edits, exception opt-in, explicit routing, suppressed exceptions, deny-list, and repeated exception limiting
+- Enabled CLI APCu in the test runner and proved the same exception emits once. Null saves report the expected edit-no-change warning while remaining OK
+- Reviewed actual diff for test isolation, real operation coverage, actor context, valid core permissions, expected additional notifications, and HTTP interception. No phase-specific blockers remain; existing lint debt B001 remains assigned to phase 5

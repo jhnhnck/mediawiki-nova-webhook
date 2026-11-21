@@ -60,6 +60,27 @@ class ErrorAlertHookTest extends NovaDiscordIntegrationTestCase {
             'Empty deny-list should not suppress any exception');
     }
 
+    public function testPrivacyAndExplicitRoutingGates(): void {
+        foreach ([
+            ['DiscordPrivateExceptionAlerts' => false],
+            ['DiscordWebhooks' => [['url' => self::WEBHOOK_URL]]],
+        ] as $overrides) {
+            $this->buildAlert($overrides)->onLogException(new RuntimeException('Private event'), false);
+            $this->assertCount(0, $this->mockHttpFactory->getCaptured());
+        }
+        $this->buildAlert([])->onLogException(new RuntimeException('Suppressed event'), true);
+        $this->assertCount(0, $this->mockHttpFactory->getCaptured());
+    }
+
+    public function testRepeatedExceptionIsRateLimited(): void {
+        $this->assertTrue(apcu_enabled(), 'The integration runner must enable APCu for CLI');
+        $alert = $this->buildAlert([]);
+        $error = new RuntimeException('Repeated exception ' . uniqid());
+        $alert->onLogException($error, false);
+        $alert->onLogException($error, false);
+        $this->assertCount(1, $this->mockHttpFactory->getCaptured());
+    }
+
     public function testBareClassEntrySuppressesAllInstances(): void {
         $alert = $this->buildAlert(['DiscordExceptionDenyList' => [RuntimeException::class]]);
         $alert->onLogException(new RuntimeException('NovaTest bare class ' . uniqid()), false);

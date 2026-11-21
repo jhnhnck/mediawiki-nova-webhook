@@ -12,6 +12,22 @@ namespace MediaWiki\Extension\NovaDiscord\Tests\Integration;
  */
 class FileDeleteCompleteHookTest extends NovaDiscordIntegrationTestCase {
     public function testFileDeleteSendsWebhook(): void {
-        $this->markTestSkipped('Stubbed test');
+        $file = $this->uploadFile();
+        \MediaWiki\Utils\MWTimestamp::setFakeTime(time() + 2);
+        $file = $this->uploadFile();
+        $old = $file->getHistory(1)[0];
+        $this->mockHttpFactory->reset();
+        $this->doApiRequestWithToken([
+            'action' => 'delete', 'title' => $file->getTitle()->getPrefixedText(),
+            'oldimage' => $old->getArchiveName(), 'reason' => 'Old file deletion',
+        ]);
+        $this->assertNotification('Old file deletion');
+        $this->mockHttpFactory->reset();
+        $this->doApiRequestWithToken([
+            'action' => 'delete', 'title' => $file->getTitle()->getPrefixedText(), 'reason' => 'Whole file deletion',
+        ]);
+        $this->runDeferredUpdates();
+        $this->assertNotification('Whole file deletion');
+        \MediaWiki\Utils\MWTimestamp::setFakeTime(false);
     }
 }

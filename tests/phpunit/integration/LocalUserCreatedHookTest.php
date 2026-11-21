@@ -12,17 +12,16 @@ namespace MediaWiki\Extension\NovaDiscord\Tests\Integration;
  */
 class LocalUserCreatedHookTest extends NovaDiscordIntegrationTestCase {
     public function testLocalUserCreatedSendsWebhook(): void {
-        // setup
-        $testUser = $this->getTestUser();
-        $user = $testUser->getUser();
-        $this->assertTrue($user->isRegistered(), 'User should be created successfully');
-
-        // getTestUser() doesn't fire LocalUserCreated; dispatch manually
+        $user = $this->getServiceContainer()->getUserFactory()->newFromName('Nova Autocreated User');
         $this->mockHttpFactory->reset();
-        $this->getServiceContainer()->getHookContainer()->run(
-            'LocalUserCreated',
-            [$user, false]
+        $status = $this->getServiceContainer()->getAuthManager()->autoCreateUser(
+            $user, \MediaWiki\Auth\AuthManager::AUTOCREATE_SOURCE_MAINT, false, true,
+            $this->getTestSysop()->getAuthority()
         );
+        $this->assertStatusGood($status);
+        $this->runDeferredUpdates();
+        $this->assertTrue($user->isRegistered());
+        $this->assertCount(1, $this->mockHttpFactory->getCaptured());
 
         // build expected payload
         $username = $user->getName();

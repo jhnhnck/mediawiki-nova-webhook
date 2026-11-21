@@ -5,6 +5,10 @@
 set -euo pipefail
 cd "$APP_HOME/mediawiki"
 
+mkdir -p /tmp/nova-test-php
+print -r -- 'apc.enable_cli=1' > /tmp/nova-test-php/apcu.ini
+export PHP_INI_SCAN_DIR="${PHP_INI_SCAN_DIR:-/usr/local/etc/php/conf.d}:/tmp/nova-test-php"
+
 trap 'sleep 1' EXIT  # let stdout settle first
 
 local -a opt_all opt_stop
