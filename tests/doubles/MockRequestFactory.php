@@ -12,6 +12,7 @@ class MockRequestFactory extends HttpRequestFactory {
     private array $captured = [];
     private array $responses = [];
 
+    /** @inheritDoc */
     public function create($url, array $options = [], $caller = __METHOD__): MockRequest {
         return new MockRequest($url, $options, $caller, $this->captured, array_shift($this->responses) ?? 200);
     }

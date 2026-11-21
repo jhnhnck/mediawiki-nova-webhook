@@ -30,10 +30,7 @@ class FileAlert extends WebhookAlert implements UploadCompleteHook, FileDeleteCo
         parent::__construct($httpFactory, $revLookup, $titleFactory, $urlUtils, $novaConfig, $loggerSpi);
     }
 
-    /**
-     * Called when a file upload is complete
-     * @see https://www.mediawiki.org/wiki/Manual:Hooks/UploadComplete
-     */
+    /** @inheritDoc */
     public function onUploadComplete($uploadBase) {
         $hookName = 'UploadComplete';
 
@@ -58,10 +55,7 @@ class FileAlert extends WebhookAlert implements UploadCompleteHook, FileDeleteCo
         ));
     }
 
-    /**
-     * Called when a file is deleted
-     * @see https://www.mediawiki.org/wiki/Manual:Hooks/FileDeleteComplete
-     */
+    /** @inheritDoc */
     public function onFileDeleteComplete($file, $oldimage, $article, $user, $reason) {
         $hookName = 'FileDeleteComplete';
 
@@ -81,10 +75,7 @@ class FileAlert extends WebhookAlert implements UploadCompleteHook, FileDeleteCo
         ));
     }
 
-    /**
-     * Called when a file is restored
-     * @see https://www.mediawiki.org/wiki/Manual:Hooks/FileUndeleteComplete
-     */
+    /** @inheritDoc */
     public function onFileUndeleteComplete($title, $fileVersions, $user, $reason) {
         $hookName = 'FileUndeleteComplete';
 

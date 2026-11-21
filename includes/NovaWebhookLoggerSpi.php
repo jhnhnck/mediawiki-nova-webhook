@@ -16,6 +16,7 @@ use Psr\Log\LoggerInterface;
  * depending on 'LoggerFactory' being a registered service (it isn't in all MW versions).
  */
 class NovaWebhookLoggerSpi implements LoggerSpi {
+    /** @inheritDoc */
     public function getLogger( $channel ): LoggerInterface {
         return LoggerFactory::getInstance( $channel );
     }

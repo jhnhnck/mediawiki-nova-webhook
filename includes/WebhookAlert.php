@@ -6,16 +6,16 @@
 
 namespace MediaWiki\Extension\NovaWebhook;
 
+use MediaWiki\Content\TextContent;
 use MediaWiki\Http\HttpRequestFactory;
 use MediaWiki\Logger\Spi as LoggerSpi;
 use MediaWiki\Revision\RevisionLookup;
 use MediaWiki\Revision\RevisionRecord;
+use MediaWiki\Revision\SlotRecord;
 use MediaWiki\SpecialPage\SpecialPage;
 use MediaWiki\Title\TitleFactory;
 use MediaWiki\User\User;
 use MediaWiki\Utils\UrlUtils;
-use MediaWiki\Content\TextContent;
-use MediaWiki\Revision\SlotRecord;
 use Psr\Log\LoggerInterface;
 use Wikimedia\Diff\ComplexityException;
 use Wikimedia\Diff\Diff;

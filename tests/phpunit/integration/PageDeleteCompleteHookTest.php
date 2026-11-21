@@ -30,11 +30,24 @@ class PageDeleteCompleteHookTest extends NovaWebhookIntegrationTestCase {
         // build expected payload
         $username = $user->getUser()->getName();
         $userScored = str_replace(' ', '_', $username);
-        $expectedPayload = '{"content":"[' . $username . '](<https://novawebhook.local/wiki/User:' . $userScored . '>) ([t](<https://novawebhook.local/wiki/User_talk:' . $userScored . '>)|[c](<https://novawebhook.local/wiki/Special:Contributions/' . $userScored . '>)) deleted [NovaTestPageDelete](<https://novawebhook.local/wiki/NovaTestPageDelete>) `Deleted page` (1 revisions deleted)","allowed_mentions":{"parse":[]}}';
+        $expectedPayload = '{"content":"['
+            . $username
+            . '](<https://novawebhook.local/wiki/User:'
+            . $userScored
+            . '>) ([t](<https://novawebhook.local/wiki/User_talk:'
+            . $userScored
+            . '>)|[c](<https://novawebhook.local/wiki/Special:Contributions/'
+            . $userScored
+            . '>)) deleted [NovaTestPageDelete](<https://novawebhook.local/wiki/NovaT'
+            . 'estPageDelete>) `Deleted page` (1 revisions deleted)","allowed_mention'
+            . 's":{"parse":[]}}';
 
         // verify webhook payload
         $payload = $this->getDiscordRequests()[0];
         $this->assertNotNull($payload, 'Webhook payload should be captured on page delete');
-        $this->assertEquals($expectedPayload, $payload['options']['postData'], 'Webhook payload for page delete should match expected output');
+        $this->assertEquals(
+            $expectedPayload, $payload['options']['postData'],
+            'Webhook payload for page delete should match expected output'
+        );
     }
 }

@@ -26,7 +26,15 @@ class LocalUserCreatedHookTest extends NovaWebhookIntegrationTestCase {
         // build expected payload
         $username = $user->getName();
         $userScored = str_replace(' ', '_', $username);
-        $expectedPayload = '{"content":"[' . $username . '](<https://novawebhook.local/wiki/User:' . $userScored . '>) ([t](<https://novawebhook.local/wiki/User_talk:' . $userScored . '>)|[c](<https://novawebhook.local/wiki/Special:Contributions/' . $userScored . '>)) registered","allowed_mentions":{"parse":[]}}';
+        $expectedPayload = '{"content":"['
+            . $username
+            . '](<https://novawebhook.local/wiki/User:'
+            . $userScored
+            . '>) ([t](<https://novawebhook.local/wiki/User_talk:'
+            . $userScored
+            . '>)|[c](<https://novawebhook.local/wiki/Special:Contributions/'
+            . $userScored
+            . '>)) registered","allowed_mentions":{"parse":[]}}';
 
         // verify webhook payload
         $captured = $this->getDiscordRequests();
@@ -34,6 +42,9 @@ class LocalUserCreatedHookTest extends NovaWebhookIntegrationTestCase {
         $payload = $captured[0];
 
         $this->assertNotNull($payload, 'Webhook payload should not be null');
-        $this->assertEquals($expectedPayload, $payload['options']['postData'], 'Webhook payload for user creation should match expected output');
+        $this->assertEquals(
+            $expectedPayload, $payload['options']['postData'],
+            'Webhook payload for user creation should match expected output'
+        );
     }
 }

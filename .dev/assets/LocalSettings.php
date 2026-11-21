@@ -41,7 +41,7 @@ $wgSharedTables[] = 'actor';
 
 # Uploads and media
 $wgEnableUploads = true;
-$wgTmpDirectory =  "/tmp";
+$wgTmpDirectory = "/tmp";
 
 # Security and authentication
 $wgSecretKey = "{$_ENV['NOVA_SECRET_KEY']}";

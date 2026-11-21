@@ -40,10 +40,29 @@ class UnblockUserCompleteHookTest extends NovaWebhookIntegrationTestCase {
         $targetUsername = $targetUser->getName();
         $targetUserScored = str_replace(' ', '_', $targetUsername);
 
-        $expectedPayload = '{"content":"[' . $unblockingUsername . '](<https://novawebhook.local/wiki/User:' . $unblockingUserScored . '>) ([t](<https://novawebhook.local/wiki/User_talk:' . $unblockingUserScored . '>)|[c](<https://novawebhook.local/wiki/Special:Contributions/' . $unblockingUserScored . '>)) unblocked [' . $targetUsername . '](<https://novawebhook.local/wiki/User:' . $targetUserScored . '>) ([t](<https://novawebhook.local/wiki/User_talk:' . $targetUserScored . '>)|[c](<https://novawebhook.local/wiki/Special:Contributions/' . $targetUserScored . '>))","allowed_mentions":{"parse":[]}}';
+        $expectedPayload = '{"content":"['
+            . $unblockingUsername
+            . '](<https://novawebhook.local/wiki/User:'
+            . $unblockingUserScored
+            . '>) ([t](<https://novawebhook.local/wiki/User_talk:'
+            . $unblockingUserScored
+            . '>)|[c](<https://novawebhook.local/wiki/Special:Contributions/'
+            . $unblockingUserScored
+            . '>)) unblocked ['
+            . $targetUsername
+            . '](<https://novawebhook.local/wiki/User:'
+            . $targetUserScored
+            . '>) ([t](<https://novawebhook.local/wiki/User_talk:'
+            . $targetUserScored
+            . '>)|[c](<https://novawebhook.local/wiki/Special:Contributions/'
+            . $targetUserScored
+            . '>))","allowed_mentions":{"parse":[]}}';
 
         $payload = $this->getDiscordRequests()[0];
         $this->assertNotNull($payload, 'Webhook payload should be captured on user unblock');
-        $this->assertEquals($expectedPayload, $payload['options']['postData'], 'Webhook payload for user unblock should match expected output');
+        $this->assertEquals(
+            $expectedPayload, $payload['options']['postData'],
+            'Webhook payload for user unblock should match expected output'
+        );
     }
 }

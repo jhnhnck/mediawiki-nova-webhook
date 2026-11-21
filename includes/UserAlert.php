@@ -7,7 +7,6 @@
 namespace MediaWiki\Extension\NovaWebhook;
 
 use MediaWiki\Auth\Hook\LocalUserCreatedHook;
-use MediaWiki\Block\DatabaseBlock;
 use MediaWiki\Http\HttpRequestFactory;
 use MediaWiki\Logger\Spi as LoggerSpi;
 use MediaWiki\Revision\RevisionLookup;
@@ -20,7 +19,12 @@ use MediaWiki\User\UserFactory;
 use MediaWiki\User\UserIdentity;
 use MediaWiki\Utils\UrlUtils;
 
-class UserAlert extends WebhookAlert implements LocalUserCreatedHook, BlockIpCompleteHook, UnblockUserCompleteHook, UserGroupsChangedHook {
+class UserAlert extends WebhookAlert implements
+    LocalUserCreatedHook,
+    BlockIpCompleteHook,
+    UnblockUserCompleteHook,
+    UserGroupsChangedHook
+{
     private UserFactory $userFactory;
 
     public function __construct(HttpRequestFactory $httpFactory,
@@ -34,10 +38,7 @@ class UserAlert extends WebhookAlert implements LocalUserCreatedHook, BlockIpCom
         parent::__construct($httpFactory, $revLookup, $titleFactory, $urlUtils, $novaConfig, $loggerSpi);
     }
 
-    /**
-     * Called when a user is created
-     * @see https://www.mediawiki.org/wiki/Manual:Hooks/LocalUserCreated
-     */
+    /** @inheritDoc */
     public function onLocalUserCreated($user, $autocreated) {
         $hookName = 'LocalUserCreated';
 
@@ -51,10 +52,7 @@ class UserAlert extends WebhookAlert implements LocalUserCreatedHook, BlockIpCom
         ));
     }
 
-    /**
-     * Called when a user is blocked
-     * @see https://www.mediawiki.org/wiki/Manual:Hooks/BlockIpComplete
-     */
+    /** @inheritDoc */
     public function onBlockIpComplete($block, $user, $priorBlock) {
         $hookName = 'BlockIpComplete';
 
@@ -74,10 +72,7 @@ class UserAlert extends WebhookAlert implements LocalUserCreatedHook, BlockIpCom
         ));
     }
 
-    /**
-     * Called when a user is unblocked
-     * @see https://www.mediawiki.org/wiki/Manual:Hooks/UnblockUserComplete
-     */
+    /** @inheritDoc */
     public function onUnblockUserComplete($block, $user) {
         $hookName = 'UnblockUserComplete';
 
@@ -97,10 +92,7 @@ class UserAlert extends WebhookAlert implements LocalUserCreatedHook, BlockIpCom
         ));
     }
 
-    /**
-     * Called when a user's rights are changed
-     * @see https://www.mediawiki.org/wiki/Manual:Hooks/UserGroupsChanged
-     */
+    /** @inheritDoc */
     public function onUserGroupsChanged($user, $added, $removed, $performer, $reason, $oldUGMs, $newUGMs) {
         $hookName = 'UserGroupsChanged';
 

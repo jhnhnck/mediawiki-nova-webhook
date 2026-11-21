@@ -8,6 +8,7 @@ namespace MediaWiki\Extension\NovaWebhook;
 
 use MediaWiki\Hook\PageMoveCompleteHook;
 use MediaWiki\Http\HttpRequestFactory;
+use MediaWiki\Linker\LinkTarget;
 use MediaWiki\Logger\Spi as LoggerSpi;
 use MediaWiki\Logging\ManualLogEntry;
 use MediaWiki\Page\Hook\PageDeleteCompleteHook;
@@ -23,9 +24,13 @@ use MediaWiki\Title\TitleFactory;
 use MediaWiki\User\UserFactory;
 use MediaWiki\User\UserIdentity;
 use MediaWiki\Utils\UrlUtils;
-use MediaWiki\Linker\LinkTarget;
 
-class PageAlert extends WebhookAlert implements PageSaveCompleteHook, PageDeleteCompleteHook, PageMoveCompleteHook, PageUndeleteCompleteHook {
+class PageAlert extends WebhookAlert implements
+    PageSaveCompleteHook,
+    PageDeleteCompleteHook,
+    PageMoveCompleteHook,
+    PageUndeleteCompleteHook
+{
     private UserFactory $userFactory;
 
     public function __construct(HttpRequestFactory $httpFactory,
@@ -40,10 +45,7 @@ class PageAlert extends WebhookAlert implements PageSaveCompleteHook, PageDelete
         parent::__construct($httpFactory, $revLookup, $titleFactory, $urlUtils, $novaConfig, $loggerSpi);
     }
 
-    /**
-     * Stub function because hook definition doesn't allow types yet
-     * @inheritDoc
-     */
+    /** @inheritDoc */
     public function onPageSaveComplete($wikiPage, $userIdentity, $summary, $flags, $revision, $editResult) {
         $this->handlePageSave($wikiPage, $userIdentity, (string)$summary, $revision, $editResult);
     }
@@ -68,7 +70,9 @@ class PageAlert extends WebhookAlert implements PageSaveCompleteHook, PageDelete
         }
 
         // filter out minor/null edits if configured
-        if (($this->novaConfig->isNoMinor() && $revision->isMinor()) || ($this->novaConfig->isNoNull() && $editResult->isNullEdit())) {
+        if (($this->novaConfig->isNoMinor() && $revision->isMinor()) ||
+            ($this->novaConfig->isNoNull() && $editResult->isNullEdit())
+        ) {
             return;
         }
 
@@ -95,10 +99,7 @@ class PageAlert extends WebhookAlert implements PageSaveCompleteHook, PageDelete
         ));
     }
 
-    /**
-     * Called when a page is deleted
-     * @see https://www.mediawiki.org/wiki/Manual:Hooks/PageDeleteComplete
-     */
+    /** @inheritDoc */
     public function onPageDeleteComplete(ProperPageIdentity $page,
                                          Authority $deleter,
                                          string $reason,
@@ -124,10 +125,7 @@ class PageAlert extends WebhookAlert implements PageSaveCompleteHook, PageDelete
         ));
     }
 
-    /**
-     * Stub function because hook definition doesn't allow types yet
-     * @inheritDoc
-     */
+    /** @inheritDoc */
     public function onPageMoveComplete($old, $new, $user, $pageid, $redirid, $reason, $revision) {
         $this->handlePageMove($old, $new, $user, $pageid, $reason, $revision);
     }
@@ -167,7 +165,7 @@ class PageAlert extends WebhookAlert implements PageSaveCompleteHook, PageDelete
      * Occurs after the undelete page request has been processed
      * @see https://www.mediawiki.org/wiki/Manual:Hooks/PageUndeleteComplete
      */
-	public function onPageUndeleteComplete(ProperPageIdentity $page,
+    public function onPageUndeleteComplete(ProperPageIdentity $page,
                                            Authority $restorer,
                                            string $reason,
                                            RevisionRecord $restoredRev,

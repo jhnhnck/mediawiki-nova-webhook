@@ -36,11 +36,26 @@ class PageMoveCompleteHookTest extends NovaWebhookIntegrationTestCase {
         // build expected payload
         $username = $user->getUser()->getName();
         $userScored = str_replace(' ', '_', $username);
-        $expectedPayload = '{"content":"[' . $username . '](<https://novawebhook.local/wiki/User:' . $userScored . '>) ([t](<https://novawebhook.local/wiki/User_talk:' . $userScored . '>)|[c](<https://novawebhook.local/wiki/Special:Contributions/' . $userScored . '>)) moved [NovaTestPageMoveBefore](<https://novawebhook.local/wiki/NovaTestPageMoveBefore>) to [NovaTestPageMoveAfter](<https://novawebhook.local/wiki/NovaTestPageMoveAfter>) `Moved page because reasons` ([diff](<https://novawebhook.local/index.php?title=NovaTestPageMoveAfter&diff=prev&oldid=2>)) (m) (+0)","allowed_mentions":{"parse":[]}}';
+        $expectedPayload = '{"content":"['
+            . $username
+            . '](<https://novawebhook.local/wiki/User:'
+            . $userScored
+            . '>) ([t](<https://novawebhook.local/wiki/User_talk:'
+            . $userScored
+            . '>)|[c](<https://novawebhook.local/wiki/Special:Contributions/'
+            . $userScored
+            . '>)) moved [NovaTestPageMoveBefore](<https://novawebhook.local/wiki/Nov'
+            . 'aTestPageMoveBefore>) to [NovaTestPageMoveAfter](<https://novawebhook.'
+            . 'local/wiki/NovaTestPageMoveAfter>) `Moved page because reasons` ([diff'
+            . '](<https://novawebhook.local/index.php?title=NovaTestPageMoveAfter&dif'
+            . 'f=prev&oldid=2>)) (m) (+0)","allowed_mentions":{"parse":[]}}';
 
         // verify webhook payload
         $payload = $this->getDiscordRequests()[0];
         $this->assertNotNull($payload, 'Webhook payload should be captured on page move');
-        $this->assertEquals($expectedPayload, $payload['options']['postData'], 'Webhook payload for page move should match expected output');
+        $this->assertEquals(
+            $expectedPayload, $payload['options']['postData'],
+            'Webhook payload for page move should match expected output'
+        );
     }
 }

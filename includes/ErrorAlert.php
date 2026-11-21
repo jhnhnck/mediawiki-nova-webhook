@@ -27,6 +27,7 @@ class ErrorAlert extends WebhookAlert implements LogExceptionHook {
         // the original exception is itself a service-container failure. Requesting
         // LoggerFactory here would cause a cascading fatal error in those cases.
         $nullSpi = new class implements LoggerSpi {
+            /** @inheritDoc */
             public function getLogger( $channel ) {
                 return new NullLogger();
             }
@@ -34,10 +35,7 @@ class ErrorAlert extends WebhookAlert implements LogExceptionHook {
         parent::__construct($httpFactory, $revLookup, $titleFactory, $urlUtils, $novaConfig, $nullSpi);
     }
 
-    /**
-     * Called when an exception is logged
-     * @see https://www.mediawiki.org/wiki/Manual:Hooks/LogException
-     */
+    /** @inheritDoc */
     public function onLogException($e, $suppressed): void {
         $this->logger->debug('Completing hook LogException with ' . get_class($e));
 

@@ -96,3 +96,11 @@ Parent f371d8b on REL1_46. Canonical NovaWebhook identity and endpoints configur
 - Corrected attribute prefixing discovered by the fresh install. Runner copies LocalSettings.new instead of moving it so read-only fixture mounts work
 - Intentional old-name references: hosted repository URLs, migration tests/docs, compatibility mapping, historical notes/planning evidence, AGENTS deployment reference, and the publish script's existing sibling checkout-path comment. No duplicate registration or old PHP/service aliases are promised
 - Remaining lint debt stays B001 and will be resolved in a separate housekeeping commit during phase 5. Public loading-name change warrants reassessing the previous minor-version assumption
+
+## 2026-11-21 - phase 5 started
+
+Parent 1ef2ba4 on REL1_46. Resolve B001 separately, finalize public requirements/schema/migration docs and backlog, select 4.0.0 for the loading/namespace breaking change, and execute final canonical/legacy integration plus check/Phan gates.
+
+## 2026-11-21 - phase 5 lint housekeeping verification
+
+composer check now passes: PHP parallel lint (40 files), PHP_CodeSniffer (zero errors/warnings), and minus-x. Corrected inherited hook documentation, imports/whitespace, typed test-double property, and wrapped exact wire-payload fixtures. Canonical integration suite remains 71 tests / 504 assertions / zero skips (/tmp/nova-lint-tests.log). The format-only diff was reviewed separately from release metadata and documentation. B001 is resolved with this verification; preserve a separate housekeeping commit.

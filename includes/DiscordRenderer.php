@@ -56,12 +56,14 @@ final class DiscordRenderer {
                 $data['removed'] ? '- ' . implode(', ', $data['removed']) : ''
             ),
             'UploadComplete' => $this->message(
-                'novawebhook-uploadcomplete', $actor, $data['reupload'] ? $this->message('novawebhook-uploadnewver') : '',
+                'novawebhook-uploadcomplete', $actor,
+                $data['reupload'] ? $this->message('novawebhook-uploadnewver') : '',
                 $this->link($data['filename'], $pageData['url'] ?? ''), $this->formatMessage($data['comment']),
                 $this->formatBytes($data['size']), $data['width'], $data['height'], $data['mime_type']
             ),
             'FileDeleteComplete' => $this->message(
-                'novawebhook-filedeletecomplete', $actor, $this->link($data['filename'], $pageData['url'] ?? ''), $reason
+                'novawebhook-filedeletecomplete', $actor,
+                $this->link($data['filename'], $pageData['url'] ?? ''), $reason
             ),
             'FileUndeleteComplete' => $this->message('novawebhook-fileundeletecomplete', $actor, $page, $reason),
             'RenameUserComplete' => $this->message(
@@ -105,7 +107,8 @@ final class DiscordRenderer {
             'novawebhook-revisionlinks', $this->link($this->message('novawebhook-diff'), $revision['url']),
             $revision['minor'] ? $this->message('novawebhook-minor') : '',
             $this->message(
-                'novawebhook-size', $revision['delta'] === null ? (string)$revision['size'] : sprintf('%+d', $revision['delta'])
+                'novawebhook-size',
+                $revision['delta'] === null ? (string)$revision['size'] : sprintf('%+d', $revision['delta'])
             )
         );
     }

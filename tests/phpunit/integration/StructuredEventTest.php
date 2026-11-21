@@ -3,8 +3,8 @@
 
 namespace MediaWiki\Extension\NovaWebhook\Tests\Integration;
 
-use MediaWiki\Extension\NovaWebhook\WebhookAlert;
 use MediaWiki\Extension\NovaWebhook\DiscordRenderer;
+use MediaWiki\Extension\NovaWebhook\WebhookAlert;
 use MediaWiki\Extension\NovaWebhook\WebhookEvent;
 use MediaWiki\Utils\MWTimestamp;
 use RuntimeException;

@@ -18,7 +18,12 @@ use MediaWiki\Title\TitleFactory;
 use MediaWiki\User\UserFactory;
 use MediaWiki\Utils\UrlUtils;
 
-class ArticleAlert extends WebhookAlert implements ArticleRevisionVisibilitySetHook, ArticleProtectCompleteHook, AfterImportPageHook, ArticleMergeCompleteHook {
+class ArticleAlert extends WebhookAlert implements
+    ArticleRevisionVisibilitySetHook,
+    ArticleProtectCompleteHook,
+    AfterImportPageHook,
+    ArticleMergeCompleteHook
+{
     private UserFactory $userFactory;
 
     public function __construct(HttpRequestFactory $httpFactory,
@@ -32,10 +37,7 @@ class ArticleAlert extends WebhookAlert implements ArticleRevisionVisibilitySetH
         parent::__construct($httpFactory, $revLookup, $titleFactory, $urlUtils, $novaConfig, $loggerSpi);
     }
 
-    /**
-     * Called after committing revision visibility changes to the database
-     * @see https://www.mediawiki.org/wiki/Manual:Hooks/ArticleRevisionVisibilitySet
-     */
+    /** @inheritDoc */
     public function onArticleRevisionVisibilitySet($title, $ids, $visibilityChangeMap) {
         $hookName = 'ArticleRevisionVisibilitySet';
 
@@ -52,10 +54,7 @@ class ArticleAlert extends WebhookAlert implements ArticleRevisionVisibilitySetH
         ));
     }
 
-    /**
-     * Called when a page is protected (or unprotected)
-     * @see https://www.mediawiki.org/wiki/Manual:Hooks/ArticleProtectComplete
-     */
+    /** @inheritDoc */
     public function onArticleProtectComplete($wikiPage, $user, $protect, $reason) {
         $hookName = 'ArticleProtectComplete';
 
@@ -70,10 +69,7 @@ class ArticleAlert extends WebhookAlert implements ArticleRevisionVisibilitySetH
         ));
     }
 
-    /**
-     * Called when a page is imported
-     * @see https://www.mediawiki.org/wiki/Manual:Hooks/AfterImportPage
-     */
+    /** @inheritDoc */
     public function onAfterImportPage($title, $foreignTitle, $revCount, $sRevCount, $pageInfo) {
         $hookName = 'AfterImportPage';
 
@@ -91,10 +87,7 @@ class ArticleAlert extends WebhookAlert implements ArticleRevisionVisibilitySetH
         ));
     }
 
-    /**
-     * Called when article histories are merged
-     * @see https://www.mediawiki.org/wiki/Manual:Hooks/ArticleMergeComplete
-     */
+    /** @inheritDoc */
     public function onArticleMergeComplete($targetTitle, $destTitle) {
         $hookName = 'ArticleMergeComplete';
 

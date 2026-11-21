@@ -30,10 +30,29 @@ class BlockIpCompleteHookTest extends NovaWebhookIntegrationTestCase {
         $targetUsername = $targetUser->getName();
         $targetUserScored = str_replace(' ', '_', $targetUsername);
 
-        $expectedPayload = '{"content":"[' . $blockingUsername . '](<https://novawebhook.local/wiki/User:' . $blockingUserScored . '>) ([t](<https://novawebhook.local/wiki/User_talk:' . $blockingUserScored . '>)|[c](<https://novawebhook.local/wiki/Special:Contributions/' . $blockingUserScored . '>)) blocked [' . $targetUsername . '](<https://novawebhook.local/wiki/User:' . $targetUserScored . '>) ([t](<https://novawebhook.local/wiki/User_talk:' . $targetUserScored . '>)|[c](<https://novawebhook.local/wiki/Special:Contributions/' . $targetUserScored . '>)) `Test block reason` (infinity)","allowed_mentions":{"parse":[]}}';
+        $expectedPayload = '{"content":"['
+            . $blockingUsername
+            . '](<https://novawebhook.local/wiki/User:'
+            . $blockingUserScored
+            . '>) ([t](<https://novawebhook.local/wiki/User_talk:'
+            . $blockingUserScored
+            . '>)|[c](<https://novawebhook.local/wiki/Special:Contributions/'
+            . $blockingUserScored
+            . '>)) blocked ['
+            . $targetUsername
+            . '](<https://novawebhook.local/wiki/User:'
+            . $targetUserScored
+            . '>) ([t](<https://novawebhook.local/wiki/User_talk:'
+            . $targetUserScored
+            . '>)|[c](<https://novawebhook.local/wiki/Special:Contributions/'
+            . $targetUserScored
+            . '>)) `Test block reason` (infinity)","allowed_mentions":{"parse":[]}}';
 
         $payload = $this->getDiscordRequests()[0];
         $this->assertNotNull($payload, 'Webhook payload should be captured on user block');
-        $this->assertEquals($expectedPayload, $payload['options']['postData'], 'Webhook payload for user block should match expected output');
+        $this->assertEquals(
+            $expectedPayload, $payload['options']['postData'],
+            'Webhook payload for user block should match expected output'
+        );
     }
 }

@@ -29,10 +29,7 @@ class ExtensionAlert extends WebhookAlert implements RenameUserCompleteHook {
         parent::__construct($httpFactory, $revLookup, $titleFactory, $urlUtils, $novaConfig, $loggerSpi);
     }
 
-    /**
-     * Called when core finishes renaming a user
-     * @see https://www.mediawiki.org/wiki/Manual:Hooks/RenameUserComplete
-     */
+    /** @inheritDoc */
     public function onRenameUserComplete(int $uid, string $old, string $new): void {
         $hookName = 'RenameUserComplete';
 

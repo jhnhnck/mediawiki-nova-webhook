@@ -8,17 +8,17 @@ namespace MediaWiki\Extension\NovaWebhook\Tests\Integration;
 
 use MediaWiki\Config\ServiceOptions;
 use MediaWiki\Extension\NovaWebhook\Tests\Doubles\MockRequestFactory;
-use MediaWiki\Logger\LoggerFactory;
-use MediaWiki\Tests\Api\ApiTestCase;
-use MediaWiki\Request\FauxRequest;
-use MediaWiki\Upload\UploadFromFile;
 use MediaWiki\FileRepo\File\LocalFile;
+use MediaWiki\Logger\LoggerFactory;
+use MediaWiki\Request\FauxRequest;
+use MediaWiki\Tests\Api\ApiTestCase;
+use MediaWiki\Upload\UploadFromFile;
 
 /**
  * @group Database
  */
 abstract class NovaWebhookIntegrationTestCase extends ApiTestCase {
-    protected $mockHttpFactory;
+    protected MockRequestFactory $mockHttpFactory;
 
     protected function setUp(): void {
         parent::setUp();
@@ -109,7 +109,7 @@ abstract class NovaWebhookIntegrationTestCase extends ApiTestCase {
             $this->assertArrayNotHasKey('diff', $payload['data']);
             $this->assertStringNotContainsString('File description', $request['options']['postData']);
         }
-        $this->assertCount(count($discord), array_filter(
+        $this->assertSameSize($discord, array_filter(
             $requests, static fn ($request) => str_contains($request['options']['postData'], '"schema_version":1')
         ));
         return $discord;

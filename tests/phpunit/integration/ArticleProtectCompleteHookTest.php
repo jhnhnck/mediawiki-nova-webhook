@@ -30,10 +30,25 @@ class ArticleProtectCompleteHookTest extends NovaWebhookIntegrationTestCase {
         $performerUserScored = str_replace(' ', '_', $performerUsername);
         $pageTitle = 'NovaTestProtect';
 
-        $expectedPayload = '{"content":"[' . $performerUsername . '](<https://novawebhook.local/wiki/User:' . $performerUserScored . '>) ([t](<https://novawebhook.local/wiki/User_talk:' . $performerUserScored . '>)|[c](<https://novawebhook.local/wiki/Special:Contributions/' . $performerUserScored . '>)) changed protection of [' . $pageTitle . '](<https://novawebhook.local/wiki/' . $pageTitle . '>) `Test protection reason` (sysop, sysop)","allowed_mentions":{"parse":[]}}';
+        $expectedPayload = '{"content":"['
+            . $performerUsername
+            . '](<https://novawebhook.local/wiki/User:'
+            . $performerUserScored
+            . '>) ([t](<https://novawebhook.local/wiki/User_talk:'
+            . $performerUserScored
+            . '>)|[c](<https://novawebhook.local/wiki/Special:Contributions/'
+            . $performerUserScored
+            . '>)) changed protection of ['
+            . $pageTitle
+            . '](<https://novawebhook.local/wiki/'
+            . $pageTitle
+            . '>) `Test protection reason` (sysop, sysop)","allowed_mentions":{"parse":[]}}';
 
         $payload = $this->getDiscordRequests()[0];
         $this->assertNotNull($payload, 'Webhook payload should be captured on article protect');
-        $this->assertEquals($expectedPayload, $payload['options']['postData'], 'Webhook payload for article protect should match expected output');
+        $this->assertEquals(
+            $expectedPayload, $payload['options']['postData'],
+            'Webhook payload for article protect should match expected output'
+        );
     }
 }

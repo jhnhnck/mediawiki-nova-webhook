@@ -120,6 +120,7 @@ class ErrorAlertHookTest extends NovaWebhookIntegrationTestCase {
             false
         );
         $this->assertCount(0, $this->getDiscordRequests(),
-            'Deny-listed exception must remain suppressed when private alerts toggle on later');
+            'Deny-listed exception must remain suppressed when private alerts toggl'
+                . 'e on later');
     }
 }

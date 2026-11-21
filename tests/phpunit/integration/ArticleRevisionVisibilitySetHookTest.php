@@ -40,10 +40,25 @@ class ArticleRevisionVisibilitySetHookTest extends NovaWebhookIntegrationTestCas
         $performerUserScored = str_replace(' ', '_', $performerUsername);
         $pageTitle = 'NovaTestRevVisibility';
 
-        $expectedPayload = '{"content":"[' . $performerUsername . '](<https://novawebhook.local/wiki/User:' . $performerUserScored . '>) ([t](<https://novawebhook.local/wiki/User_talk:' . $performerUserScored . '>)|[c](<https://novawebhook.local/wiki/Special:Contributions/' . $performerUserScored . '>)) changed visibility of 1 revisions on [' . $pageTitle . '](<https://novawebhook.local/wiki/' . $pageTitle . '>)","allowed_mentions":{"parse":[]}}';
+        $expectedPayload = '{"content":"['
+            . $performerUsername
+            . '](<https://novawebhook.local/wiki/User:'
+            . $performerUserScored
+            . '>) ([t](<https://novawebhook.local/wiki/User_talk:'
+            . $performerUserScored
+            . '>)|[c](<https://novawebhook.local/wiki/Special:Contributions/'
+            . $performerUserScored
+            . '>)) changed visibility of 1 revisions on ['
+            . $pageTitle
+            . '](<https://novawebhook.local/wiki/'
+            . $pageTitle
+            . '>)","allowed_mentions":{"parse":[]}}';
 
         $payload = $this->getDiscordRequests()[0];
         $this->assertNotNull($payload, 'Webhook payload should be captured on revision visibility change');
-        $this->assertEquals($expectedPayload, $payload['options']['postData'], 'Webhook payload for revision visibility change should match expected output');
+        $this->assertEquals(
+            $expectedPayload, $payload['options']['postData'],
+            'Webhook payload for revision visibility change should match expected output'
+        );
     }
 }
