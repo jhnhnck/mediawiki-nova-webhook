@@ -1,16 +1,16 @@
 <?php
 /**
- * NovaDiscord - UserGroupsChanged Test Case
+ * NovaWebhook - UserGroupsChanged Test Case
  * This file is licensed under the MIT License; See LICENSE for full text.
  */
 
-namespace MediaWiki\Extension\NovaDiscord\Tests\Integration;
+namespace MediaWiki\Extension\NovaWebhook\Tests\Integration;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\NovaDiscord\UserAlert::onUserGroupsChanged
+ * @covers \MediaWiki\Extension\NovaWebhook\UserAlert::onUserGroupsChanged
  */
-class UserGroupsChangedHookTest extends NovaDiscordIntegrationTestCase {
+class UserGroupsChangedHookTest extends NovaWebhookIntegrationTestCase {
     public function testUserGroupsChangedSendsWebhook(): void {
         $target = $this->getMutableTestUser()->getUser();
         $performer = $this->getTestSysop()->getUser();

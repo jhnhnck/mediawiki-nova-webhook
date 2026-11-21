@@ -80,3 +80,19 @@ Parent 9ceec2d on REL1_46. Shared event model, Discord renderer, metadata-only J
 - Config routing now preserves format metadata. Format defaults to discord only when absent, and invalid entries log no endpoint URLs. Exceptions retain explicit routing, opt-in, deny-list, suppressed-error checks, rate limit, and quiet failure behavior for both serializers
 - Phan with --allow-polyfill-parser passed after nullable uploader guards and local data narrowing; default command cannot run without php-ast in the image. Final tooling will make the supported fallback explicit. Syntax passed; codesniffer debt remains B001 for separate housekeeping
 - Reviewed phase diff against 9ceec2d: collection/rendering boundaries, timestamp sources, metadata privacy, template parity, error isolation, and default compatibility. Added docs/webhook-events.md as the public v1 field/time contract
+
+## 2026-11-21 - phase 4 started
+
+Parent f371d8b on REL1_46. Canonical NovaWebhook identity and endpoints configuration, complete namespace/service/message/test/tooling rename, explicit legacy setting precedence and documented load-path migration. Baseline: 60 tests / 474 assertions / zero skips.
+
+## 2026-11-21 - phase 4 verification and review
+
+- Canonical NovaWebhook extension identity, PHP namespace, services, message keys, logger channel, Compose project, test domain, loading paths, and package name now agree. Hosted Git URL, historical notes, original checkout path, and plan directory remain unchanged
+- Configuration names use NovaWebhook, with NovaWebhookEndpoints replacing DiscordWebhooks. Legacy Discord-prefixed settings are accepted for one transition release; explicit canonical false/null/empty arrays win and endpoint aliases never merge
+- MediaWiki exports manifest config defaults before services are built, obscuring explicit-setting presence. To preserve exact precedence without sentinel values or handler globals, defaults/descriptions now live in attributes.NovaWebhook.ConfigDefaults and are normalized into ServiceOptions only after main-config presence checks. MediaWiki prefixes the runtime attribute as NovaWebhookConfigDefaults
+- Fresh canonical installation: 69 tests / 499 assertions / zero skips (/tmp/nova-phase4-final.log). Legacy-only LocalSettings installation with the additional fresh-config test: 71 tests / 504 assertions / zero skips (/tmp/nova-phase4-legacy.log). The actual service factory reads legacy globals through Config, not just HashConfig fixtures
+- Migration fixtures cover defaults, canonical-only, legacy-only, conflicting explicit values, canonical null hooks, duplicate endpoint aliases, and exception privacy precedence. Diagnostic capture proves no setting values/endpoint secrets are logged
+- Phan parser-fallback run passed (/tmp/nova-phase4-phan.log). Reviewed full rename diff against f371d8b, manifest registrations, source reference inventory, package.conf/script resolution, canonical and legacy loading, schema/routing stability, and migration docs. No publish script was run
+- Corrected attribute prefixing discovered by the fresh install. Runner copies LocalSettings.new instead of moving it so read-only fixture mounts work
+- Intentional old-name references: hosted repository URLs, migration tests/docs, compatibility mapping, historical notes/planning evidence, AGENTS deployment reference, and the publish script's existing sibling checkout-path comment. No duplicate registration or old PHP/service aliases are promised
+- Remaining lint debt stays B001 and will be resolved in a separate housekeeping commit during phase 5. Public loading-name change warrants reassessing the previous minor-version assumption

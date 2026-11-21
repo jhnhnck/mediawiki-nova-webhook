@@ -1,10 +1,10 @@
 <?php
 /**
- * NovaDiscord - File-related hooks
+ * NovaWebhook - File-related hooks
  * This file is licensed under the MIT License; See LICENSE for full text.
  */
 
-namespace MediaWiki\Extension\NovaDiscord;
+namespace MediaWiki\Extension\NovaWebhook;
 
 use MediaWiki\Hook\FileDeleteCompleteHook;
 use MediaWiki\Http\HttpRequestFactory;
@@ -16,7 +16,7 @@ use MediaWiki\Upload\Hook\UploadCompleteHook;
 use MediaWiki\User\UserFactory;
 use MediaWiki\Utils\UrlUtils;
 
-class FileAlert extends DiscordAlert implements UploadCompleteHook, FileDeleteCompleteHook, FileUndeleteCompleteHook {
+class FileAlert extends WebhookAlert implements UploadCompleteHook, FileDeleteCompleteHook, FileUndeleteCompleteHook {
     private UserFactory $userFactory;
 
     public function __construct(HttpRequestFactory $httpFactory,
@@ -24,7 +24,7 @@ class FileAlert extends DiscordAlert implements UploadCompleteHook, FileDeleteCo
                                 TitleFactory $titleFactory,
                                 UrlUtils $urlUtils,
                                 UserFactory $userFactory,
-                                NovaDiscordConfig $novaConfig,
+                                NovaWebhookConfig $novaConfig,
                                 LoggerSpi $loggerSpi) {
         $this->userFactory = $userFactory;
         parent::__construct($httpFactory, $revLookup, $titleFactory, $urlUtils, $novaConfig, $loggerSpi);

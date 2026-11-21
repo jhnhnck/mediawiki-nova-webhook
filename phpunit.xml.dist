@@ -3,7 +3,7 @@
          backupStaticAttributes="false"
          bootstrap="tests/bootstrap.php">
     <testsuites>
-        <testsuite name="novadiscord-hooks-integration">
+        <testsuite name="novawebhook-hooks-integration">
             <directory>tests/phpunit/integration/</directory>
         </testsuite>
     </testsuites>

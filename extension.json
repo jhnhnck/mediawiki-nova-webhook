@@ -1,142 +1,98 @@
 {
-    "name": "NovaDiscord",
+    "name": "NovaWebhook",
     "author": [
         "[https://github.com/jhnhnck John Hancock]"
     ],
     "url": "https://github.com/jhnhnck/mediawiki-extensions-NovaDiscord",
     "version": "3.1.0",
-    "descriptionmsg": "discord-desc",
+    "descriptionmsg": "novawebhook-desc",
     "license-name": "MIT",
     "requires": {
         "MediaWiki": ">= 1.46.0"
     },
     "manifest_version": 2,
-    "config": {
-        "DiscordWebhooks": {
-            "value": [],
-            "description": "Array of webhook configurations. Each entry must have a 'url' key (string) and optional 'format' ('discord' or 'json', defaults to 'discord') and 'hooks' (array of hook names, or null). If 'hooks' is absent, the webhook uses DiscordDefaultHooks. Example: [{'url': 'https://...', 'hooks': ['PageSaveComplete']}]"
-        },
-        "DiscordDefaultHooks": {
-            "value": null,
-            "description": "Default set of hook names enabled for webhooks that do not specify their own 'hooks' key. null means all hooks are enabled."
-        },
-        "DiscordNoBots": {
-            "value": true,
-            "description": "If true, actions performed by bot accounts do not trigger webhook notifications."
-        },
-        "DiscordNoMinor": {
-            "value": false,
-            "description": "If true, minor edits do not trigger a PageSaveComplete notification."
-        },
-        "DiscordNoNull": {
-            "value": true,
-            "description": "If true, null edits (no content change) do not trigger a PageSaveComplete notification."
-        },
-        "DiscordMaxChars": {
-            "value": 500,
-            "description": "Maximum number of characters shown for user-provided text such as edit summaries and block reasons. Longer text is truncated."
-        },
-        "DiscordDisabledNS": {
-            "value": [],
-            "description": "Array of namespace IDs whose page events should not trigger notifications."
-        },
-        "DiscordDisabledUsers": {
-            "value": [
-                "Redirect fixer"
-            ],
-            "description": "Array of usernames whose actions should not trigger notifications."
-        },
-        "DiscordPrivateExceptionAlerts": {
-            "value": false,
-            "description": "If true, unhandled PHP exceptions are posted to the webhook. Rate-limited per exception fingerprint. Opt-in only."
-        },
-        "DiscordExceptionDenyList": {
-            "value": [],
-            "description": "Patterns suppressing exception alerts. Each entry is either a class name string (suppresses all instances of that class) or an associative array with 'class' (required, fully-qualified) and optional 'messageContains' (case-sensitive substring). Suppressed exceptions still flow through MediaWiki's normal exception logging."
-        }
-    },
     "ServiceWiringFiles": [
         "ServiceWiring.php"
     ],
     "AutoloadNamespaces": {
-        "MediaWiki\\Extension\\NovaDiscord\\": "includes/"
+        "MediaWiki\\Extension\\NovaWebhook\\": "includes/"
     },
     "TestAutoloadNamespaces": {
-        "MediaWiki\\Extension\\NovaDiscord\\Tests\\Doubles\\": "tests/doubles/",
-        "MediaWiki\\Extension\\NovaDiscord\\Tests\\Integration\\": "tests/phpunit/integration/"
+        "MediaWiki\\Extension\\NovaWebhook\\Tests\\Doubles\\": "tests/doubles/",
+        "MediaWiki\\Extension\\NovaWebhook\\Tests\\Integration\\": "tests/phpunit/integration/"
     },
     "MessagesDirs": {
-        "mw-discord": "i18n"
+        "novawebhook": "i18n"
     },
     "HookHandlers": {
         "PageAlert": {
-            "class": "MediaWiki\\Extension\\NovaDiscord\\PageAlert",
+            "class": "MediaWiki\\Extension\\NovaWebhook\\PageAlert",
             "services": [
                 "HttpRequestFactory",
                 "RevisionLookup",
                 "TitleFactory",
                 "UrlUtils",
                 "UserFactory",
-                "NovaDiscord.Config",
-                "NovaDiscord.LoggerSpi"
+                "NovaWebhook.Config",
+                "NovaWebhook.LoggerSpi"
             ]
         },
         "UserAlert": {
-            "class": "MediaWiki\\Extension\\NovaDiscord\\UserAlert",
+            "class": "MediaWiki\\Extension\\NovaWebhook\\UserAlert",
             "services": [
                 "HttpRequestFactory",
                 "RevisionLookup",
                 "TitleFactory",
                 "UrlUtils",
                 "UserFactory",
-                "NovaDiscord.Config",
-                "NovaDiscord.LoggerSpi"
+                "NovaWebhook.Config",
+                "NovaWebhook.LoggerSpi"
             ]
         },
         "ArticleAlert": {
-            "class": "MediaWiki\\Extension\\NovaDiscord\\ArticleAlert",
+            "class": "MediaWiki\\Extension\\NovaWebhook\\ArticleAlert",
             "services": [
                 "HttpRequestFactory",
                 "RevisionLookup",
                 "TitleFactory",
                 "UrlUtils",
                 "UserFactory",
-                "NovaDiscord.Config",
-                "NovaDiscord.LoggerSpi"
+                "NovaWebhook.Config",
+                "NovaWebhook.LoggerSpi"
             ]
         },
         "FileAlert": {
-            "class": "MediaWiki\\Extension\\NovaDiscord\\FileAlert",
+            "class": "MediaWiki\\Extension\\NovaWebhook\\FileAlert",
             "services": [
                 "HttpRequestFactory",
                 "RevisionLookup",
                 "TitleFactory",
                 "UrlUtils",
                 "UserFactory",
-                "NovaDiscord.Config",
-                "NovaDiscord.LoggerSpi"
+                "NovaWebhook.Config",
+                "NovaWebhook.LoggerSpi"
             ]
         },
         "ExtensionAlert": {
-            "class": "MediaWiki\\Extension\\NovaDiscord\\ExtensionAlert",
+            "class": "MediaWiki\\Extension\\NovaWebhook\\ExtensionAlert",
             "services": [
                 "HttpRequestFactory",
                 "RevisionLookup",
                 "TitleFactory",
                 "UrlUtils",
                 "UserFactory",
-                "NovaDiscord.Config",
-                "NovaDiscord.LoggerSpi"
+                "NovaWebhook.Config",
+                "NovaWebhook.LoggerSpi"
             ]
         },
         "ErrorAlert": {
-            "class": "MediaWiki\\Extension\\NovaDiscord\\ErrorAlert",
+            "class": "MediaWiki\\Extension\\NovaWebhook\\ErrorAlert",
             "services": [
                 "HttpRequestFactory",
                 "RevisionLookup",
                 "TitleFactory",
                 "UrlUtils",
-                "NovaDiscord.Config"
+                "NovaWebhook.Config"
             ]
         }
     },
@@ -158,5 +114,53 @@
         "FileUndeleteComplete": "FileAlert",
         "RenameUserComplete": "ExtensionAlert",
         "LogException": "ErrorAlert"
+    },
+    "attributes": {
+        "NovaWebhook": {
+            "ConfigDefaults": {
+                "NovaWebhookEndpoints": {
+                    "value": [],
+                    "description": "Array of webhook configurations. Each entry must have a 'url' key (string) and optional 'format' ('discord' or 'json', defaults to 'discord') and 'hooks' (array of hook names, or null). If 'hooks' is absent, the webhook uses NovaWebhookDefaultHooks. Example: [{'url': 'https://...', 'hooks': ['PageSaveComplete']}]"
+                },
+                "NovaWebhookDefaultHooks": {
+                    "value": null,
+                    "description": "Default set of hook names enabled for webhooks that do not specify their own 'hooks' key. null means all hooks are enabled."
+                },
+                "NovaWebhookNoBots": {
+                    "value": true,
+                    "description": "If true, actions performed by bot accounts do not trigger webhook notifications."
+                },
+                "NovaWebhookNoMinor": {
+                    "value": false,
+                    "description": "If true, minor edits do not trigger a PageSaveComplete notification."
+                },
+                "NovaWebhookNoNull": {
+                    "value": true,
+                    "description": "If true, null edits (no content change) do not trigger a PageSaveComplete notification."
+                },
+                "NovaWebhookMaxChars": {
+                    "value": 500,
+                    "description": "Maximum number of characters shown for user-provided text such as edit summaries and block reasons. Longer text is truncated."
+                },
+                "NovaWebhookDisabledNS": {
+                    "value": [],
+                    "description": "Array of namespace IDs whose page events should not trigger notifications."
+                },
+                "NovaWebhookDisabledUsers": {
+                    "value": [
+                        "Redirect fixer"
+                    ],
+                    "description": "Array of usernames whose actions should not trigger notifications."
+                },
+                "NovaWebhookPrivateExceptionAlerts": {
+                    "value": false,
+                    "description": "If true, unhandled PHP exceptions are posted to the webhook. Rate-limited per exception fingerprint. Opt-in only."
+                },
+                "NovaWebhookExceptionDenyList": {
+                    "value": [],
+                    "description": "Patterns suppressing exception alerts. Each entry is either a class name string (suppresses all instances of that class) or an associative array with 'class' (required, fully-qualified) and optional 'messageContains' (case-sensitive substring). Suppressed exceptions still flow through MediaWiki's normal exception logging."
+                }
+            }
+        }
     }
 }

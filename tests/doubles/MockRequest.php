@@ -1,7 +1,7 @@
 <?php
 // SPDX-License-Identifier: MIT
 
-namespace MediaWiki\Extension\NovaDiscord\Tests\Doubles;
+namespace MediaWiki\Extension\NovaWebhook\Tests\Doubles;
 
 use StatusValue;
 use Throwable;

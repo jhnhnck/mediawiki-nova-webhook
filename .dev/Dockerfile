@@ -69,7 +69,7 @@ COPY --chown=www-data:www-data --chmod=770 $ASSETS/entry.zsh $APP_HOME/entry.zsh
 # https://github.com/jhnhnck/mediawiki-extensions-NovaDiscord
 COPY --chown=www-data:www-data \
     --exclude=.dev --exclude=vendor \
-    . ./extensions/NovaDiscord/
+    . ./extensions/NovaWebhook/
 
 WORKDIR $APP_HOME
 CMD ["zsh", "./entry.zsh"]

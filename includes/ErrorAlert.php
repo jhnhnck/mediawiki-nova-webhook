@@ -1,10 +1,10 @@
 <?php
 /**
- * NovaDiscord - Exception Alerting
+ * NovaWebhook - Exception Alerting
  * This file is licensed under the MIT License; See LICENSE for full text.
  */
 
-namespace MediaWiki\Extension\NovaDiscord;
+namespace MediaWiki\Extension\NovaWebhook;
 
 use MediaWiki\Exception\ErrorPageError;
 use MediaWiki\Exception\Hook\LogExceptionHook;
@@ -16,12 +16,12 @@ use MediaWiki\Title\TitleFactory;
 use MediaWiki\Utils\UrlUtils;
 use Psr\Log\NullLogger;
 
-class ErrorAlert extends DiscordAlert implements LogExceptionHook {
+class ErrorAlert extends WebhookAlert implements LogExceptionHook {
     public function __construct(HttpRequestFactory $httpFactory,
                                 RevisionLookup $revLookup,
                                 TitleFactory $titleFactory,
                                 UrlUtils $urlUtils,
-                                NovaDiscordConfig $novaConfig) {
+                                NovaWebhookConfig $novaConfig) {
         // Use a NullLogger rather than injecting LoggerFactory: this hook fires during
         // exception handling, potentially before services are fully initialized or when
         // the original exception is itself a service-container failure. Requesting
@@ -81,7 +81,7 @@ class ErrorAlert extends DiscordAlert implements LogExceptionHook {
         }
 
         // rate-limit per exception fingerprint via apcu; skip if apcu not available (e.g. cli)
-        $fingerprint = 'nova_discord_exc_' . md5(get_class($e) . $e->getMessage());
+        $fingerprint = 'nova_webhook_exc_' . md5(get_class($e) . $e->getMessage());
         if (function_exists('apcu_enabled') && apcu_enabled()) {
             if (apcu_exists($fingerprint)) {
                 return;

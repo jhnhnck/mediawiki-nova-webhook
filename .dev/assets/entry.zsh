@@ -1,5 +1,5 @@
 #!/usr/bin/env zsh
-# Nova Discord - Test container entry script
+# NovaWebhook - Test container entry script
 # This file is licensed under the MIT License; See LICENSE for full text.
 
 set -euo pipefail
@@ -26,19 +26,19 @@ php maintenance/run.php install \
     --installdbpass="$NOVA_DB_PASSWORD" \
     --dbuser='nova' \
     --dbpass="$NOVA_DB_PASSWORD" \
-    --server="https://novadiscord.local/" \
+    --server="https://novawebhook.local/" \
     --scriptpath='' \
     --lang='en' \
-    --pass="$PASS" "Nova Discord" "NovaAdmin"
+    --pass="$PASS" "NovaWebhook" "NovaAdmin"
 
-mv -fv LocalSettings.new LocalSettings.php
+cp -fv LocalSettings.new LocalSettings.php
 
 printf '\n%s\n\n' '=== Starting Tests ==='
 git rev-parse HEAD
 php --version
 composer show phpunit/phpunit --no-ansi
 
-local -a phpunit_args=("extensions/NovaDiscord/tests/phpunit" "$@")
+local -a phpunit_args=("extensions/NovaWebhook/tests/phpunit" "$@")
 (( ${#opt_stop} )) && phpunit_args=("--stop-on-failure" "${phpunit_args[@]}")
 
 if (( ${#opt_all} )); then

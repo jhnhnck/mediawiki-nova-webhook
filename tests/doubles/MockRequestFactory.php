@@ -1,10 +1,10 @@
 <?php
 /**
- * NovaDiscord - HttpRequestFactory testing double
+ * NovaWebhook - HttpRequestFactory testing double
  * This file is licensed under the MIT License; See LICENSE for full text.
  */
 
-namespace MediaWiki\Extension\NovaDiscord\Tests\Doubles;
+namespace MediaWiki\Extension\NovaWebhook\Tests\Doubles;
 
 use MediaWiki\Http\HttpRequestFactory;
 

@@ -1,7 +1,7 @@
 <?php
 // SPDX-License-Identifier: MIT
 
-namespace MediaWiki\Extension\NovaDiscord\Tests\Integration;
+namespace MediaWiki\Extension\NovaWebhook\Tests\Integration;
 
 use Wikimedia\TestingAccessWrapper;
 
@@ -9,7 +9,7 @@ use Wikimedia\TestingAccessWrapper;
  * @group Database
  * @coversNothing
  */
-class HookRegistrationTest extends NovaDiscordIntegrationTestCase {
+class HookRegistrationTest extends NovaWebhookIntegrationTestCase {
     public function testRegisteredHandlersResolveTheirServices(): void {
         $manifest = json_decode(
             file_get_contents(__DIR__ . '/../../../extension.json'), true, 512, JSON_THROW_ON_ERROR

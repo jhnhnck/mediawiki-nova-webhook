@@ -1,7 +1,7 @@
 <?php
 // SPDX-License-Identifier: MIT
 
-namespace MediaWiki\Extension\NovaDiscord;
+namespace MediaWiki\Extension\NovaWebhook;
 
 use InvalidArgumentException;
 

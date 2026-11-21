@@ -1,13 +1,13 @@
 <?php
 /**
- * NovaDiscord - Abstract Integration Test Case
+ * NovaWebhook - Abstract Integration Test Case
  * This file is licensed under the MIT License; See LICENSE for full text.
  */
 
-namespace MediaWiki\Extension\NovaDiscord\Tests\Integration;
+namespace MediaWiki\Extension\NovaWebhook\Tests\Integration;
 
 use MediaWiki\Config\ServiceOptions;
-use MediaWiki\Extension\NovaDiscord\Tests\Doubles\MockRequestFactory;
+use MediaWiki\Extension\NovaWebhook\Tests\Doubles\MockRequestFactory;
 use MediaWiki\Logger\LoggerFactory;
 use MediaWiki\Tests\Api\ApiTestCase;
 use MediaWiki\Request\FauxRequest;
@@ -17,12 +17,12 @@ use MediaWiki\FileRepo\File\LocalFile;
 /**
  * @group Database
  */
-abstract class NovaDiscordIntegrationTestCase extends ApiTestCase {
+abstract class NovaWebhookIntegrationTestCase extends ApiTestCase {
     protected $mockHttpFactory;
 
     protected function setUp(): void {
         parent::setUp();
-        $this->overrideConfigValue('DiscordWebhooks', [
+        $this->overrideConfigValue('NovaWebhookEndpoints', [
             ['url' => getenv('NOVA_WEBHOOK_URL')],
             ['url' => 'https://events.example.test/hook', 'format' => 'json'],
         ]);

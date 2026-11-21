@@ -1,6 +1,6 @@
 <?php
 /**
- * NovaDiscord - MediaWiki Local Settings file for integration tests
+ * NovaWebhook - MediaWiki Local Settings file for integration tests
  * This file is licensed under the MIT License; See LICENSE for full text.
  */
 
@@ -10,12 +10,12 @@ if (!defined('MEDIAWIKI')) {
 }
 
 # Basic site identity
-$wgSitename = 'Nova Discord';
-$wgMetaNamespace = 'Nova_Discord';
+$wgSitename = 'NovaWebhook';
+$wgMetaNamespace = 'NovaWebhook';
 
 # URL configuration
 $wgScriptPath = '';
-$wgServer = 'https://novadiscord.local';
+$wgServer = 'https://novawebhook.local';
 $wgResourceBasePath = $wgScriptPath;
 $wgArticlePath = '/wiki/$1';
 $wgUsePathInfo = true;
@@ -61,10 +61,14 @@ $wgShowExceptionDetails = true;
 wfLoadSkin('Vector');
 
 # Extensions
-wfLoadExtension('NovaDiscord');
-$wgDiscordWebhooks = [['url' => "{$_ENV['NOVA_WEBHOOK_URL']}"]];
-
-$wgDiscordNoBots = false;
+wfLoadExtension('NovaWebhook');
+if (getenv('NOVA_TEST_LEGACY_CONFIG')) {
+    $wgDiscordWebhooks = [['url' => "{$_ENV['NOVA_WEBHOOK_URL']}"]];
+    $wgDiscordNoBots = false;
+} else {
+    $wgNovaWebhookEndpoints = [['url' => "{$_ENV['NOVA_WEBHOOK_URL']}"]];
+    $wgNovaWebhookNoBots = false;
+}
 
 # Misc
 $wgPingback = true;

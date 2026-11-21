@@ -1,10 +1,10 @@
 <?php
 /**
- * NovaDiscord - Page and Article Hooks (whatever the difference is idk)
+ * NovaWebhook - Page lifecycle hooks
  * This file is licensed under the MIT License; See LICENSE for full text.
  */
 
-namespace MediaWiki\Extension\NovaDiscord;
+namespace MediaWiki\Extension\NovaWebhook;
 
 use MediaWiki\Hook\PageMoveCompleteHook;
 use MediaWiki\Http\HttpRequestFactory;
@@ -25,7 +25,7 @@ use MediaWiki\User\UserIdentity;
 use MediaWiki\Utils\UrlUtils;
 use MediaWiki\Linker\LinkTarget;
 
-class PageAlert extends DiscordAlert implements PageSaveCompleteHook, PageDeleteCompleteHook, PageMoveCompleteHook, PageUndeleteCompleteHook {
+class PageAlert extends WebhookAlert implements PageSaveCompleteHook, PageDeleteCompleteHook, PageMoveCompleteHook, PageUndeleteCompleteHook {
     private UserFactory $userFactory;
 
     public function __construct(HttpRequestFactory $httpFactory,
@@ -33,7 +33,7 @@ class PageAlert extends DiscordAlert implements PageSaveCompleteHook, PageDelete
                                 TitleFactory $titleFactory,
                                 UrlUtils $urlUtils,
                                 UserFactory $userFactory,
-                                NovaDiscordConfig $novaConfig,
+                                NovaWebhookConfig $novaConfig,
                                 LoggerSpi $loggerSpi) {
         $this->userFactory = $userFactory;
 

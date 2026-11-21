@@ -1,7 +1,7 @@
 <?php
 // SPDX-License-Identifier: MIT
 
-namespace MediaWiki\Extension\NovaDiscord\Tests\Integration;
+namespace MediaWiki\Extension\NovaWebhook\Tests\Integration;
 
 use MediaWiki\CommentStore\CommentStoreComment;
 use MediaWiki\Content\WikitextContent;
@@ -9,10 +9,10 @@ use MediaWiki\Revision\SlotRecord;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\NovaDiscord\DiscordAlert::isEnabled
- * @covers \MediaWiki\Extension\NovaDiscord\PageAlert::onPageSaveComplete
+ * @covers \MediaWiki\Extension\NovaWebhook\WebhookAlert::isEnabled
+ * @covers \MediaWiki\Extension\NovaWebhook\PageAlert::onPageSaveComplete
  */
-class NotificationFiltersTest extends NovaDiscordIntegrationTestCase {
+class NotificationFiltersTest extends NovaWebhookIntegrationTestCase {
     /** @dataProvider provideFilters */
     public function testFilteredEditsStaySilent(array $config, array $groups): void {
         $this->overrideConfigValues($config);
@@ -24,10 +24,10 @@ class NotificationFiltersTest extends NovaDiscordIntegrationTestCase {
 
     public static function provideFilters(): array {
         return [
-            'bots' => [['DiscordNoBots' => true], ['bot']],
-            'namespace' => [['DiscordDisabledNS' => [NS_MAIN]], []],
-            'no endpoints' => [['DiscordWebhooks' => []], []],
-            'hook exclusion' => [['DiscordDefaultHooks' => ['PageDeleteComplete']], []],
+            'bots' => [['NovaWebhookNoBots' => true], ['bot']],
+            'namespace' => [['NovaWebhookDisabledNS' => [NS_MAIN]], []],
+            'no endpoints' => [['NovaWebhookEndpoints' => []], []],
+            'hook exclusion' => [['NovaWebhookDefaultHooks' => ['PageDeleteComplete']], []],
         ];
     }
 
@@ -39,7 +39,7 @@ class NotificationFiltersTest extends NovaDiscordIntegrationTestCase {
     }
 
     public function testMinorEditFilter(): void {
-        $this->overrideConfigValue('DiscordNoMinor', true);
+        $this->overrideConfigValue('NovaWebhookNoMinor', true);
         $page = $this->getExistingTestPage('NovaMinorFilter');
         $this->mockHttpFactory->reset();
         $updater = $page->newPageUpdater($this->getTestUser()->getAuthority());

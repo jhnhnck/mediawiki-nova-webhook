@@ -1,17 +1,17 @@
 <?php
 /**
- * NovaDiscord - ArticleUndelete Test Case
+ * NovaWebhook - ArticleUndelete Test Case
  * This file is licensed under the MIT License; See LICENSE for full text.
  */
 
-namespace MediaWiki\Extension\NovaDiscord\Tests\Integration;
+namespace MediaWiki\Extension\NovaWebhook\Tests\Integration;
 
 /**
  * @group Database
- * @covers MediaWiki\Extension\NovaDiscord\PageAlert::onPageUndeleteComplete
+ * @covers MediaWiki\Extension\NovaWebhook\PageAlert::onPageUndeleteComplete
  * TODO: This should also test for restoring specific revisions as well, I believe
  */
-class PageUndeleteCompleteHookTest extends NovaDiscordIntegrationTestCase {
+class PageUndeleteCompleteHookTest extends NovaWebhookIntegrationTestCase {
     public function testPageUndeletionSendsWebhook(): void {
         // setup
         $services = $this->getServiceContainer();
@@ -37,7 +37,7 @@ class PageUndeleteCompleteHookTest extends NovaDiscordIntegrationTestCase {
         // build expected payload
         $username = $user->getUser()->getName();
         $userScored = str_replace(' ', '_', $username);
-        $expectedPayload = '{"content":"[' . $username . '](<https://novadiscord.local/wiki/User:' . $userScored . '>) ([t](<https://novadiscord.local/wiki/User_talk:' . $userScored . '>)|[c](<https://novadiscord.local/wiki/Special:Contributions/' . $userScored . '>)) undeleted [NovaTestPageUndelete](<https://novadiscord.local/wiki/NovaTestPageUndelete>) `Undeleted page for test case`","allowed_mentions":{"parse":[]}}';
+        $expectedPayload = '{"content":"[' . $username . '](<https://novawebhook.local/wiki/User:' . $userScored . '>) ([t](<https://novawebhook.local/wiki/User_talk:' . $userScored . '>)|[c](<https://novawebhook.local/wiki/Special:Contributions/' . $userScored . '>)) undeleted [NovaTestPageUndelete](<https://novawebhook.local/wiki/NovaTestPageUndelete>) `Undeleted page for test case`","allowed_mentions":{"parse":[]}}';
 
         // verify webhook payload
         $payload = $this->getDiscordRequests()[0];

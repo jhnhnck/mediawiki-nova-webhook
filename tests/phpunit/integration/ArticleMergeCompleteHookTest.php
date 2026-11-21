@@ -1,16 +1,16 @@
 <?php
 /**
- * NovaDiscord - ArticleMergeComplete Test Case
+ * NovaWebhook - ArticleMergeComplete Test Case
  * This file is licensed under the MIT License; See LICENSE for full text.
  */
 
-namespace MediaWiki\Extension\NovaDiscord\Tests\Integration;
+namespace MediaWiki\Extension\NovaWebhook\Tests\Integration;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\NovaDiscord\ArticleAlert::onArticleMergeComplete
+ * @covers \MediaWiki\Extension\NovaWebhook\ArticleAlert::onArticleMergeComplete
  */
-class ArticleMergeCompleteHookTest extends NovaDiscordIntegrationTestCase {
+class ArticleMergeCompleteHookTest extends NovaWebhookIntegrationTestCase {
     public function testArticleMergeSendsWebhook(): void {
         $user = $this->getTestSysop()->getUser();
         \MediaWiki\Context\RequestContext::getMain()->setUser($user);

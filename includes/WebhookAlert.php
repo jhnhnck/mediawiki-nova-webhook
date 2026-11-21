@@ -1,10 +1,10 @@
 <?php
 /**
- * NovaDiscord - Hooks
+ * NovaWebhook - Hooks
  * This file is licensed under the MIT License; See LICENSE for full text.
  */
 
-namespace MediaWiki\Extension\NovaDiscord;
+namespace MediaWiki\Extension\NovaWebhook;
 
 use MediaWiki\Http\HttpRequestFactory;
 use MediaWiki\Logger\Spi as LoggerSpi;
@@ -23,26 +23,26 @@ use Wikimedia\Diff\DiffOpAdd;
 use Wikimedia\Diff\DiffOpChange;
 use Wikimedia\Diff\DiffOpDelete;
 
-abstract class DiscordAlert {
+abstract class WebhookAlert {
     private HttpRequestFactory $httpFactory;
     private RevisionLookup $revLookup;
     protected TitleFactory $titleFactory;
     private UrlUtils $urlUtils;
     protected LoggerInterface $logger;
-    protected NovaDiscordConfig $novaConfig;
+    protected NovaWebhookConfig $novaConfig;
 
     public function __construct(HttpRequestFactory $httpFactory,
                                 RevisionLookup $revLookup,
                                 TitleFactory $titleFactory,
                                 UrlUtils $urlUtils,
-                                NovaDiscordConfig $novaConfig,
+                                NovaWebhookConfig $novaConfig,
                                 LoggerSpi $loggerSpi) {
         $this->httpFactory = $httpFactory;
         $this->revLookup = $revLookup;
         $this->titleFactory = $titleFactory;
         $this->urlUtils = $urlUtils;
         $this->novaConfig = $novaConfig;
-        $this->logger = $loggerSpi->getLogger('nova-discord');
+        $this->logger = $loggerSpi->getLogger('nova-webhook');
     }
 
     protected function sendEvent(WebhookEvent $event): void {

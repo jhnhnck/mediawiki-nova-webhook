@@ -1,16 +1,16 @@
 <?php
 /**
- * NovaDiscord - LocalUserCreated Test Case
+ * NovaWebhook - LocalUserCreated Test Case
  * This file is licensed under the MIT License; See LICENSE for full text.
  */
 
-namespace MediaWiki\Extension\NovaDiscord\Tests\Integration;
+namespace MediaWiki\Extension\NovaWebhook\Tests\Integration;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\NovaDiscord\UserAlert::onLocalUserCreated
+ * @covers \MediaWiki\Extension\NovaWebhook\UserAlert::onLocalUserCreated
  */
-class LocalUserCreatedHookTest extends NovaDiscordIntegrationTestCase {
+class LocalUserCreatedHookTest extends NovaWebhookIntegrationTestCase {
     public function testLocalUserCreatedSendsWebhook(): void {
         $user = $this->getServiceContainer()->getUserFactory()->newFromName('Nova Autocreated User');
         $this->mockHttpFactory->reset();
@@ -26,7 +26,7 @@ class LocalUserCreatedHookTest extends NovaDiscordIntegrationTestCase {
         // build expected payload
         $username = $user->getName();
         $userScored = str_replace(' ', '_', $username);
-        $expectedPayload = '{"content":"[' . $username . '](<https://novadiscord.local/wiki/User:' . $userScored . '>) ([t](<https://novadiscord.local/wiki/User_talk:' . $userScored . '>)|[c](<https://novadiscord.local/wiki/Special:Contributions/' . $userScored . '>)) registered","allowed_mentions":{"parse":[]}}';
+        $expectedPayload = '{"content":"[' . $username . '](<https://novawebhook.local/wiki/User:' . $userScored . '>) ([t](<https://novawebhook.local/wiki/User_talk:' . $userScored . '>)|[c](<https://novawebhook.local/wiki/Special:Contributions/' . $userScored . '>)) registered","allowed_mentions":{"parse":[]}}';
 
         // verify webhook payload
         $captured = $this->getDiscordRequests();

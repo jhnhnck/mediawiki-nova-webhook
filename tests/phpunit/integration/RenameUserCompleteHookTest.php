@@ -1,16 +1,16 @@
 <?php
 /**
- * NovaDiscord - RenameUserComplete Test Case
+ * NovaWebhook - RenameUserComplete Test Case
  * This file is licensed under the MIT License; See LICENSE for full text.
  */
 
-namespace MediaWiki\Extension\NovaDiscord\Tests\Integration;
+namespace MediaWiki\Extension\NovaWebhook\Tests\Integration;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\NovaDiscord\ExtensionAlert::onRenameUserComplete
+ * @covers \MediaWiki\Extension\NovaWebhook\ExtensionAlert::onRenameUserComplete
  */
-class RenameUserCompleteHookTest extends NovaDiscordIntegrationTestCase {
+class RenameUserCompleteHookTest extends NovaWebhookIntegrationTestCase {
     public function testRenameUserSendsWebhook(): void {
         $user = $this->getMutableTestUser()->getUser();
         $performer = $this->getTestSysop()->getUser();

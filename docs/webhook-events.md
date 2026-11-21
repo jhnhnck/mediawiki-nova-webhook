@@ -3,7 +3,7 @@
 Each endpoint selects `format: discord` or `format: json`. An omitted format selects Discord. An invalid format skips that endpoint and logs a configuration warning. Endpoints require a valid HTTPS URL; hook selection and filters apply to both formats. Delivery remains synchronous, with no automatic retry. Failure at one destination does not prevent an attempt at the next destination.
 
 ```php
-$wgDiscordWebhooks = [
+$wgNovaWebhookEndpoints = [
     ['url' => 'https://discord.com/api/webhooks/...', 'format' => 'discord'],
     ['url' => 'https://receiver.example.org/events', 'format' => 'json'],
 ];

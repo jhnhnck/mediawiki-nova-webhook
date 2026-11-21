@@ -1,16 +1,16 @@
 <?php
 /**
- * NovaDiscord - FileUndeleteComplete Test Case
+ * NovaWebhook - FileUndeleteComplete Test Case
  * This file is licensed under the MIT License; See LICENSE for full text.
  */
 
-namespace MediaWiki\Extension\NovaDiscord\Tests\Integration;
+namespace MediaWiki\Extension\NovaWebhook\Tests\Integration;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\NovaDiscord\FileAlert::onFileUndeleteComplete
+ * @covers \MediaWiki\Extension\NovaWebhook\FileAlert::onFileUndeleteComplete
  */
-class FileUndeleteCompleteHookTest extends NovaDiscordIntegrationTestCase {
+class FileUndeleteCompleteHookTest extends NovaWebhookIntegrationTestCase {
     public function testFileUndeleteSendsWebhook(): void {
         $file = $this->uploadFile();
         $this->doApiRequestWithToken(['action' => 'delete', 'title' => $file->getTitle()->getPrefixedText()]);

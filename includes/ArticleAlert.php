@@ -1,10 +1,10 @@
 <?php
 /**
- * NovaDiscord - Article and revision hooks
+ * NovaWebhook - Article and revision hooks
  * This file is licensed under the MIT License; See LICENSE for full text.
  */
 
-namespace MediaWiki\Extension\NovaDiscord;
+namespace MediaWiki\Extension\NovaWebhook;
 
 use MediaWiki\Context\RequestContext;
 use MediaWiki\Hook\ArticleMergeCompleteHook;
@@ -18,7 +18,7 @@ use MediaWiki\Title\TitleFactory;
 use MediaWiki\User\UserFactory;
 use MediaWiki\Utils\UrlUtils;
 
-class ArticleAlert extends DiscordAlert implements ArticleRevisionVisibilitySetHook, ArticleProtectCompleteHook, AfterImportPageHook, ArticleMergeCompleteHook {
+class ArticleAlert extends WebhookAlert implements ArticleRevisionVisibilitySetHook, ArticleProtectCompleteHook, AfterImportPageHook, ArticleMergeCompleteHook {
     private UserFactory $userFactory;
 
     public function __construct(HttpRequestFactory $httpFactory,
@@ -26,7 +26,7 @@ class ArticleAlert extends DiscordAlert implements ArticleRevisionVisibilitySetH
                                 TitleFactory $titleFactory,
                                 UrlUtils $urlUtils,
                                 UserFactory $userFactory,
-                                NovaDiscordConfig $novaConfig,
+                                NovaWebhookConfig $novaConfig,
                                 LoggerSpi $loggerSpi) {
         $this->userFactory = $userFactory;
         parent::__construct($httpFactory, $revLookup, $titleFactory, $urlUtils, $novaConfig, $loggerSpi);

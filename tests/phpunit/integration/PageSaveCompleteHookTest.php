@@ -1,19 +1,19 @@
 <?php
 /**
- * NovaDiscord - PageSaveComplete Test Case
+ * NovaWebhook - PageSaveComplete Test Case
  * This file is licensed under the MIT License; See LICENSE for full text.
  */
 
-namespace MediaWiki\Extension\NovaDiscord\Tests\Integration;
+namespace MediaWiki\Extension\NovaWebhook\Tests\Integration;
 
 use MediaWiki\Content\WikitextContent;
 use MediaWiki\Revision\SlotRecord;
 
 /**
  * @group Database
- * @covers MediaWiki\Extension\NovaDiscord\PageAlert::onPageSaveComplete
+ * @covers MediaWiki\Extension\NovaWebhook\PageAlert::onPageSaveComplete
  */
-class PageSaveCompleteHookTest extends NovaDiscordIntegrationTestCase {
+class PageSaveCompleteHookTest extends NovaWebhookIntegrationTestCase {
     public function testPageCreationSendsWebhook(): void {
         // create page
         $user = $this->getTestUser();
@@ -29,7 +29,7 @@ class PageSaveCompleteHookTest extends NovaDiscordIntegrationTestCase {
         // build expected payload
         $username = $user->getUser()->getName();
         $userScored = str_replace(' ', '_', $username);
-        $expectedPayload = '{"content":"[' . $username . '](<https://novadiscord.local/wiki/User:' . $userScored . '>) ([t](<https://novadiscord.local/wiki/User_talk:' . $userScored . '>)|[c](<https://novadiscord.local/wiki/Special:Contributions/' . $userScored . '>)) created [NovaTestPageCreate](<https://novadiscord.local/wiki/NovaTestPageCreate>) ([diff](<https://novadiscord.local/index.php?title=NovaTestPageCreate&diff=prev&oldid=1>)) (45) `Created page`\n```diff\n- \n+ Not to be confused with [[NovaTestPageEdit]].\n```","allowed_mentions":{"parse":[]}}';
+        $expectedPayload = '{"content":"[' . $username . '](<https://novawebhook.local/wiki/User:' . $userScored . '>) ([t](<https://novawebhook.local/wiki/User_talk:' . $userScored . '>)|[c](<https://novawebhook.local/wiki/Special:Contributions/' . $userScored . '>)) created [NovaTestPageCreate](<https://novawebhook.local/wiki/NovaTestPageCreate>) ([diff](<https://novawebhook.local/index.php?title=NovaTestPageCreate&diff=prev&oldid=1>)) (45) `Created page`\n```diff\n- \n+ Not to be confused with [[NovaTestPageEdit]].\n```","allowed_mentions":{"parse":[]}}';
 
         // verify webhook payload
         $this->assertCount(1, $this->getDiscordRequests());
@@ -63,7 +63,7 @@ class PageSaveCompleteHookTest extends NovaDiscordIntegrationTestCase {
         // build expected payload — no diff block
         $username = $user->getUser()->getName();
         $userScored = str_replace(' ', '_', $username);
-        $expectedPayload = '{"content":"[' . $username . '](<https://novadiscord.local/wiki/User:' . $userScored . '>) ([t](<https://novadiscord.local/wiki/User_talk:' . $userScored . '>)|[c](<https://novadiscord.local/wiki/Special:Contributions/' . $userScored . '>)) edited [NovaTestPageMinor](<https://novadiscord.local/wiki/NovaTestPageMinor>) ([diff](<https://novadiscord.local/index.php?title=NovaTestPageMinor&diff=prev&oldid=2>)) (m) (+12) `Fixed typo`","allowed_mentions":{"parse":[]}}';
+        $expectedPayload = '{"content":"[' . $username . '](<https://novawebhook.local/wiki/User:' . $userScored . '>) ([t](<https://novawebhook.local/wiki/User_talk:' . $userScored . '>)|[c](<https://novawebhook.local/wiki/Special:Contributions/' . $userScored . '>)) edited [NovaTestPageMinor](<https://novawebhook.local/wiki/NovaTestPageMinor>) ([diff](<https://novawebhook.local/index.php?title=NovaTestPageMinor&diff=prev&oldid=2>)) (m) (+12) `Fixed typo`","allowed_mentions":{"parse":[]}}';
 
         // verify webhook payload
         $payload = $this->getDiscordRequests()[0];
@@ -91,7 +91,7 @@ class PageSaveCompleteHookTest extends NovaDiscordIntegrationTestCase {
         // build expected payload
         $username = $user->getUser()->getName();
         $userScored = str_replace(' ', '_', $username);
-        $expectedPayload = '{"content":"[' . $username . '](<https://novadiscord.local/wiki/User:' . $userScored . '>) ([t](<https://novadiscord.local/wiki/User_talk:' . $userScored . '>)|[c](<https://novadiscord.local/wiki/Special:Contributions/' . $userScored . '>)) edited [NovaTestPageEdit](<https://novadiscord.local/wiki/NovaTestPageEdit>) ([diff](<https://novadiscord.local/index.php?title=NovaTestPageEdit&diff=prev&oldid=2>)) (+44) `Added content`\n```diff\n- TBD\n+ The quick brown fox jumped over the lazy churg.\n```","allowed_mentions":{"parse":[]}}';
+        $expectedPayload = '{"content":"[' . $username . '](<https://novawebhook.local/wiki/User:' . $userScored . '>) ([t](<https://novawebhook.local/wiki/User_talk:' . $userScored . '>)|[c](<https://novawebhook.local/wiki/Special:Contributions/' . $userScored . '>)) edited [NovaTestPageEdit](<https://novawebhook.local/wiki/NovaTestPageEdit>) ([diff](<https://novawebhook.local/index.php?title=NovaTestPageEdit&diff=prev&oldid=2>)) (+44) `Added content`\n```diff\n- TBD\n+ The quick brown fox jumped over the lazy churg.\n```","allowed_mentions":{"parse":[]}}';
 
         // verify webhook payload
         $payload = $this->getDiscordRequests()[0];

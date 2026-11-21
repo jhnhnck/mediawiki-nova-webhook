@@ -1,16 +1,16 @@
 <?php
 /**
- * NovaDiscord - PageDeleteComplete Test Case
+ * NovaWebhook - PageDeleteComplete Test Case
  * This file is licensed under the MIT License; See LICENSE for full text.
  */
 
-namespace MediaWiki\Extension\NovaDiscord\Tests\Integration;
+namespace MediaWiki\Extension\NovaWebhook\Tests\Integration;
 
 /**
  * @group Database
- * @covers MediaWiki\Extension\NovaDiscord\PageAlert::onPageDeleteComplete
+ * @covers MediaWiki\Extension\NovaWebhook\PageAlert::onPageDeleteComplete
  */
-class PageDeleteCompleteHookTest extends NovaDiscordIntegrationTestCase {
+class PageDeleteCompleteHookTest extends NovaWebhookIntegrationTestCase {
     public function testPageDeleteSendsWebhook(): void {
         // setup
         $services = $this->getServiceContainer();
@@ -30,7 +30,7 @@ class PageDeleteCompleteHookTest extends NovaDiscordIntegrationTestCase {
         // build expected payload
         $username = $user->getUser()->getName();
         $userScored = str_replace(' ', '_', $username);
-        $expectedPayload = '{"content":"[' . $username . '](<https://novadiscord.local/wiki/User:' . $userScored . '>) ([t](<https://novadiscord.local/wiki/User_talk:' . $userScored . '>)|[c](<https://novadiscord.local/wiki/Special:Contributions/' . $userScored . '>)) deleted [NovaTestPageDelete](<https://novadiscord.local/wiki/NovaTestPageDelete>) `Deleted page` (1 revisions deleted)","allowed_mentions":{"parse":[]}}';
+        $expectedPayload = '{"content":"[' . $username . '](<https://novawebhook.local/wiki/User:' . $userScored . '>) ([t](<https://novawebhook.local/wiki/User_talk:' . $userScored . '>)|[c](<https://novawebhook.local/wiki/Special:Contributions/' . $userScored . '>)) deleted [NovaTestPageDelete](<https://novawebhook.local/wiki/NovaTestPageDelete>) `Deleted page` (1 revisions deleted)","allowed_mentions":{"parse":[]}}';
 
         // verify webhook payload
         $payload = $this->getDiscordRequests()[0];

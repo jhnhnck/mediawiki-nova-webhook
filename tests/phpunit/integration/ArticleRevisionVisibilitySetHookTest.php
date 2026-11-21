@@ -1,18 +1,18 @@
 <?php
 /**
- * NovaDiscord - ArticleRevisionVisibilitySet Test Case
+ * NovaWebhook - ArticleRevisionVisibilitySet Test Case
  * This file is licensed under the MIT License; See LICENSE for full text.
  */
 
-namespace MediaWiki\Extension\NovaDiscord\Tests\Integration;
+namespace MediaWiki\Extension\NovaWebhook\Tests\Integration;
 
 use MediaWiki\Context\RequestContext;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\NovaDiscord\ArticleAlert::onArticleRevisionVisibilitySet
+ * @covers \MediaWiki\Extension\NovaWebhook\ArticleAlert::onArticleRevisionVisibilitySet
  */
-class ArticleRevisionVisibilitySetHookTest extends NovaDiscordIntegrationTestCase {
+class ArticleRevisionVisibilitySetHookTest extends NovaWebhookIntegrationTestCase {
     public function testArticleRevisionVisibilityChangeSendsWebhook(): void {
         $performer = $this->getTestSysop();
         $page = $this->getExistingTestPage('NovaTestRevVisibility');
@@ -40,7 +40,7 @@ class ArticleRevisionVisibilitySetHookTest extends NovaDiscordIntegrationTestCas
         $performerUserScored = str_replace(' ', '_', $performerUsername);
         $pageTitle = 'NovaTestRevVisibility';
 
-        $expectedPayload = '{"content":"[' . $performerUsername . '](<https://novadiscord.local/wiki/User:' . $performerUserScored . '>) ([t](<https://novadiscord.local/wiki/User_talk:' . $performerUserScored . '>)|[c](<https://novadiscord.local/wiki/Special:Contributions/' . $performerUserScored . '>)) changed visibility of 1 revisions on [' . $pageTitle . '](<https://novadiscord.local/wiki/' . $pageTitle . '>)","allowed_mentions":{"parse":[]}}';
+        $expectedPayload = '{"content":"[' . $performerUsername . '](<https://novawebhook.local/wiki/User:' . $performerUserScored . '>) ([t](<https://novawebhook.local/wiki/User_talk:' . $performerUserScored . '>)|[c](<https://novawebhook.local/wiki/Special:Contributions/' . $performerUserScored . '>)) changed visibility of 1 revisions on [' . $pageTitle . '](<https://novawebhook.local/wiki/' . $pageTitle . '>)","allowed_mentions":{"parse":[]}}';
 
         $payload = $this->getDiscordRequests()[0];
         $this->assertNotNull($payload, 'Webhook payload should be captured on revision visibility change');

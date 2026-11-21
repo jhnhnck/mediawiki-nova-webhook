@@ -1,28 +1,26 @@
 <?php
 // SPDX-License-Identifier: MIT
 
-namespace MediaWiki\Extension\NovaDiscord\Tests\Integration;
+namespace MediaWiki\Extension\NovaWebhook\Tests\Integration;
 
-use MediaWiki\Config\ServiceOptions;
-use MediaWiki\Extension\NovaDiscord\DiscordAlert;
-use MediaWiki\Extension\NovaDiscord\DiscordRenderer;
-use MediaWiki\Extension\NovaDiscord\NovaDiscordConfig;
-use MediaWiki\Extension\NovaDiscord\WebhookEvent;
+use MediaWiki\Extension\NovaWebhook\WebhookAlert;
+use MediaWiki\Extension\NovaWebhook\DiscordRenderer;
+use MediaWiki\Extension\NovaWebhook\WebhookEvent;
 use MediaWiki\Utils\MWTimestamp;
 use RuntimeException;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\NovaDiscord\WebhookEvent
- * @covers \MediaWiki\Extension\NovaDiscord\DiscordRenderer
- * @covers \MediaWiki\Extension\NovaDiscord\DiscordAlert::sendEvent
- * @covers \MediaWiki\Extension\NovaDiscord\NovaDiscordConfig::getDestinationsForHook
+ * @covers \MediaWiki\Extension\NovaWebhook\WebhookEvent
+ * @covers \MediaWiki\Extension\NovaWebhook\DiscordRenderer
+ * @covers \MediaWiki\Extension\NovaWebhook\WebhookAlert::sendEvent
+ * @covers \MediaWiki\Extension\NovaWebhook\NovaWebhookConfig::getDestinationsForHook
  */
-class StructuredEventTest extends NovaDiscordIntegrationTestCase {
+class StructuredEventTest extends NovaWebhookIntegrationTestCase {
     protected function setUp(): void {
         parent::setUp();
         $hooks = ['LogException', 'PageSaveComplete', 'PageDeleteComplete'];
-        $this->overrideConfigValue('DiscordWebhooks', [
+        $this->overrideConfigValue('NovaWebhookEndpoints', [
             ['url' => getenv('NOVA_WEBHOOK_URL'), 'hooks' => $hooks],
             ['url' => 'https://events.example.test/hook', 'format' => 'json', 'hooks' => $hooks],
         ]);
@@ -94,7 +92,7 @@ class StructuredEventTest extends NovaDiscordIntegrationTestCase {
     }
 
     public function testInvalidFormatsAndUrlsAreExcluded(): void {
-        $this->overrideConfigValue('DiscordWebhooks', [
+        $this->overrideConfigValue('NovaWebhookEndpoints', [
             ['url' => 'https://events.example.test/invalid', 'format' => 'xml'],
             ['url' => 'https://events.example.test/null', 'format' => null],
             ['url' => 'http://events.example.test/insecure', 'format' => 'json'],
@@ -133,14 +131,12 @@ class StructuredEventTest extends NovaDiscordIntegrationTestCase {
 
     private function deliver(WebhookEvent $event): void {
         $services = $this->getServiceContainer();
-        $config = new NovaDiscordConfig(new ServiceOptions(
-            NovaDiscordConfig::CONSTRUCTOR_OPTIONS, $services->getMainConfig()
-        ));
+        $config = $services->getService('NovaWebhook.Config');
         // the transport seam exercises serialization independently of exception eligibility
         $alert = new class(
             $this->mockHttpFactory, $services->getRevisionLookup(), $services->getTitleFactory(),
-            $services->getUrlUtils(), $config, $services->getService('NovaDiscord.LoggerSpi')
-        ) extends DiscordAlert {
+            $services->getUrlUtils(), $config, $services->getService('NovaWebhook.LoggerSpi')
+        ) extends WebhookAlert {
             public function deliver(WebhookEvent $event): void {
                 $this->sendEvent($event);
             }

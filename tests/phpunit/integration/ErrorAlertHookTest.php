@@ -1,48 +1,48 @@
 <?php
 /**
- * NovaDiscord - LogException Test Case
+ * NovaWebhook - LogException Test Case
  * This file is licensed under the MIT License; See LICENSE for full text.
  */
 
-namespace MediaWiki\Extension\NovaDiscord\Tests\Integration;
+namespace MediaWiki\Extension\NovaWebhook\Tests\Integration;
 
 use MediaWiki\Config\HashConfig;
 use MediaWiki\Config\ServiceOptions;
-use MediaWiki\Extension\NovaDiscord\ErrorAlert;
-use MediaWiki\Extension\NovaDiscord\NovaDiscordConfig;
+use MediaWiki\Extension\NovaWebhook\ErrorAlert;
+use MediaWiki\Extension\NovaWebhook\NovaWebhookConfig;
 use RuntimeException;
 use Wikimedia\Assert\PreconditionException;
 
 /**
  * @group Database
- * @covers MediaWiki\Extension\NovaDiscord\ErrorAlert::onLogException
+ * @covers MediaWiki\Extension\NovaWebhook\ErrorAlert::onLogException
  */
-class ErrorAlertHookTest extends NovaDiscordIntegrationTestCase {
-    private const WEBHOOK_URL = 'https://novadiscord.local/webhook/exception-test';
+class ErrorAlertHookTest extends NovaWebhookIntegrationTestCase {
+    private const WEBHOOK_URL = 'https://novawebhook.local/webhook/exception-test';
 
     /**
-     * Build an ErrorAlert with a fresh NovaDiscordConfig from the given overrides,
+     * Build an ErrorAlert with a fresh NovaWebhookConfig from the given overrides,
      * so each test can dictate config in isolation without touching the global service.
      */
     private function buildAlert(array $overrides): ErrorAlert {
         $defaults = [
-            'DiscordWebhooks' => [
+            'NovaWebhookEndpoints' => [
                 ['url' => self::WEBHOOK_URL, 'hooks' => ['LogException']],
                 ['url' => 'https://events.example.test/errors', 'format' => 'json', 'hooks' => ['LogException']],
             ],
-            'DiscordDefaultHooks' => null,
-            'DiscordNoBots' => true,
-            'DiscordNoMinor' => false,
-            'DiscordNoNull' => true,
-            'DiscordMaxChars' => 500,
-            'DiscordDisabledNS' => [],
-            'DiscordDisabledUsers' => [],
-            'DiscordPrivateExceptionAlerts' => true,
-            'DiscordExceptionDenyList' => [],
+            'NovaWebhookDefaultHooks' => null,
+            'NovaWebhookNoBots' => true,
+            'NovaWebhookNoMinor' => false,
+            'NovaWebhookNoNull' => true,
+            'NovaWebhookMaxChars' => 500,
+            'NovaWebhookDisabledNS' => [],
+            'NovaWebhookDisabledUsers' => [],
+            'NovaWebhookPrivateExceptionAlerts' => true,
+            'NovaWebhookExceptionDenyList' => [],
         ];
-        $config = new NovaDiscordConfig(
+        $config = new NovaWebhookConfig(
             new ServiceOptions(
-                NovaDiscordConfig::CONSTRUCTOR_OPTIONS,
+                NovaWebhookConfig::CONSTRUCTOR_OPTIONS,
                 new HashConfig(array_merge($defaults, $overrides))
             )
         );
@@ -57,7 +57,7 @@ class ErrorAlertHookTest extends NovaDiscordIntegrationTestCase {
     }
 
     public function testEmptyDenyListPostsWebhook(): void {
-        $alert = $this->buildAlert(['DiscordExceptionDenyList' => []]);
+        $alert = $this->buildAlert(['NovaWebhookExceptionDenyList' => []]);
         $alert->onLogException(new RuntimeException('NovaTest empty deny ' . uniqid()), false);
         $this->assertCount(1, $this->getDiscordRequests(),
             'Empty deny-list should not suppress any exception');
@@ -65,8 +65,8 @@ class ErrorAlertHookTest extends NovaDiscordIntegrationTestCase {
 
     public function testPrivacyAndExplicitRoutingGates(): void {
         foreach ([
-            ['DiscordPrivateExceptionAlerts' => false],
-            ['DiscordWebhooks' => [['url' => self::WEBHOOK_URL]]],
+            ['NovaWebhookPrivateExceptionAlerts' => false],
+            ['NovaWebhookEndpoints' => [['url' => self::WEBHOOK_URL]]],
         ] as $overrides) {
             $this->buildAlert($overrides)->onLogException(new RuntimeException('Private event'), false);
             $this->assertCount(0, $this->getDiscordRequests());
@@ -85,7 +85,7 @@ class ErrorAlertHookTest extends NovaDiscordIntegrationTestCase {
     }
 
     public function testBareClassEntrySuppressesAllInstances(): void {
-        $alert = $this->buildAlert(['DiscordExceptionDenyList' => [RuntimeException::class]]);
+        $alert = $this->buildAlert(['NovaWebhookExceptionDenyList' => [RuntimeException::class]]);
         $alert->onLogException(new RuntimeException('NovaTest bare class ' . uniqid()), false);
         $this->assertCount(0, $this->getDiscordRequests(),
             'Bare class entry should suppress matching exception');
@@ -97,7 +97,7 @@ class ErrorAlertHookTest extends NovaDiscordIntegrationTestCase {
         ];
 
         // matching message should be suppressed
-        $alert = $this->buildAlert(['DiscordExceptionDenyList' => $denyList]);
+        $alert = $this->buildAlert(['NovaWebhookExceptionDenyList' => $denyList]);
         $alert->onLogException(new RuntimeException('NovaTest IGNORE-ME ' . uniqid()), false);
         $this->assertCount(0, $this->getDiscordRequests(),
             'Matching messageContains should suppress the alert');
@@ -110,10 +110,10 @@ class ErrorAlertHookTest extends NovaDiscordIntegrationTestCase {
 
     public function testDenyListAppliesEvenWhenPrivateAlertsDisabled(): void {
         // verifies the deny-list filter runs *before* the private-alerts gate, so a
-        // future re-enable of DiscordPrivateExceptionAlerts cannot leak suppressed errors
+        // future re-enable of NovaWebhookPrivateExceptionAlerts cannot leak suppressed errors
         $alert = $this->buildAlert([
-            'DiscordPrivateExceptionAlerts' => false,
-            'DiscordExceptionDenyList' => [PreconditionException::class],
+            'NovaWebhookPrivateExceptionAlerts' => false,
+            'NovaWebhookExceptionDenyList' => [PreconditionException::class],
         ]);
         $alert->onLogException(
             new PreconditionException('NovaTest precondition ' . uniqid()),

@@ -1,10 +1,10 @@
 <?php
 /**
- * NovaDiscord - Extension-specific hooks (Renameuser, etc.)
+ * NovaWebhook - User rename hook
  * This file is licensed under the MIT License; See LICENSE for full text.
  */
 
-namespace MediaWiki\Extension\NovaDiscord;
+namespace MediaWiki\Extension\NovaWebhook;
 
 use MediaWiki\Context\RequestContext;
 use MediaWiki\Http\HttpRequestFactory;
@@ -15,7 +15,7 @@ use MediaWiki\Title\TitleFactory;
 use MediaWiki\User\UserFactory;
 use MediaWiki\Utils\UrlUtils;
 
-class ExtensionAlert extends DiscordAlert implements RenameUserCompleteHook {
+class ExtensionAlert extends WebhookAlert implements RenameUserCompleteHook {
     private UserFactory $userFactory;
 
     public function __construct(HttpRequestFactory $httpFactory,
@@ -23,14 +23,14 @@ class ExtensionAlert extends DiscordAlert implements RenameUserCompleteHook {
                                 TitleFactory $titleFactory,
                                 UrlUtils $urlUtils,
                                 UserFactory $userFactory,
-                                NovaDiscordConfig $novaConfig,
+                                NovaWebhookConfig $novaConfig,
                                 LoggerSpi $loggerSpi) {
         $this->userFactory = $userFactory;
         parent::__construct($httpFactory, $revLookup, $titleFactory, $urlUtils, $novaConfig, $loggerSpi);
     }
 
     /**
-     * Called when a user is renamed (Renameuser extension / MW core)
+     * Called when core finishes renaming a user
      * @see https://www.mediawiki.org/wiki/Manual:Hooks/RenameUserComplete
      */
     public function onRenameUserComplete(int $uid, string $old, string $new): void {

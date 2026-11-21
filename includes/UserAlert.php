@@ -1,10 +1,10 @@
 <?php
 /**
- * NovaDiscord - User-related hooks
+ * NovaWebhook - User-related hooks
  * This file is licensed under the MIT License; See LICENSE for full text.
  */
 
-namespace MediaWiki\Extension\NovaDiscord;
+namespace MediaWiki\Extension\NovaWebhook;
 
 use MediaWiki\Auth\Hook\LocalUserCreatedHook;
 use MediaWiki\Block\DatabaseBlock;
@@ -20,7 +20,7 @@ use MediaWiki\User\UserFactory;
 use MediaWiki\User\UserIdentity;
 use MediaWiki\Utils\UrlUtils;
 
-class UserAlert extends DiscordAlert implements LocalUserCreatedHook, BlockIpCompleteHook, UnblockUserCompleteHook, UserGroupsChangedHook {
+class UserAlert extends WebhookAlert implements LocalUserCreatedHook, BlockIpCompleteHook, UnblockUserCompleteHook, UserGroupsChangedHook {
     private UserFactory $userFactory;
 
     public function __construct(HttpRequestFactory $httpFactory,
@@ -28,7 +28,7 @@ class UserAlert extends DiscordAlert implements LocalUserCreatedHook, BlockIpCom
                                 TitleFactory $titleFactory,
                                 UrlUtils $urlUtils,
                                 UserFactory $userFactory,
-                                NovaDiscordConfig $novaConfig,
+                                NovaWebhookConfig $novaConfig,
                                 LoggerSpi $loggerSpi) {
         $this->userFactory = $userFactory;
         parent::__construct($httpFactory, $revLookup, $titleFactory, $urlUtils, $novaConfig, $loggerSpi);

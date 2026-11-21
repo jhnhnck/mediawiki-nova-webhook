@@ -1,7 +1,7 @@
 <?php
 // SPDX-License-Identifier: MIT
 
-namespace MediaWiki\Extension\NovaDiscord;
+namespace MediaWiki\Extension\NovaWebhook;
 
 final class DiscordRenderer {
     public function __construct(private readonly int $maxChars) {
@@ -16,56 +16,56 @@ final class DiscordRenderer {
         $reason = $this->formatMessage($data['reason'] ?? '');
         $message = match ($event->hook) {
             'PageSaveComplete' => $this->message(
-                $data['created'] ? 'discord-create' : 'discord-edit',
+                $data['created'] ? 'novawebhook-create' : 'novawebhook-edit',
                 $actor, $page, $this->revisionText($data['revision']), $this->formatMessage($data['summary'])
             ),
             'PageDeleteComplete' => $this->message(
-                'discord-articledelete', $actor, $page, $reason, $data['revision_count']
+                'novawebhook-articledelete', $actor, $page, $reason, $data['revision_count']
             ),
             'PageUndeleteComplete' => $this->message(
-                'discord-articleundelete', $actor,
-                $data['created'] ? '' : $this->message('discord-undeleterev'), $page, $reason
+                'novawebhook-articleundelete', $actor,
+                $data['created'] ? '' : $this->message('novawebhook-undeleterev'), $page, $reason
             ),
             'PageMoveComplete' => $this->message(
-                'discord-titlemove', $actor, $this->pageLink($data['old_page']), $page,
+                'novawebhook-titlemove', $actor, $this->pageLink($data['old_page']), $page,
                 $reason, $this->revisionText($data['revision'])
             ),
             'ArticleRevisionVisibilitySet' => $this->message(
-                'discord-revvisibility', $actor, $data['revision_count'], $page
+                'novawebhook-revvisibility', $actor, $data['revision_count'], $page
             ),
             'ArticleProtectComplete' => $this->message(
-                'discord-articleprotect', $actor, $page, $reason, implode(', ', $data['protections'])
+                'novawebhook-articleprotect', $actor, $page, $reason, implode(', ', $data['protections'])
             ),
             'AfterImportPage' => $this->message(
-                'discord-afterimportpage', $actor, $page, $data['revision_count'], $data['imported_revision_count']
+                'novawebhook-afterimportpage', $actor, $page, $data['revision_count'], $data['imported_revision_count']
             ),
             'ArticleMergeComplete' => $this->message(
-                'discord-articlemergecomplete', $actor, $this->pageLink($data['source_page']), $page
+                'novawebhook-articlemergecomplete', $actor, $this->pageLink($data['source_page']), $page
             ),
-            'LocalUserCreated' => $this->message('discord-localusercreated', $actor),
+            'LocalUserCreated' => $this->message('novawebhook-localusercreated', $actor),
             'BlockIpComplete' => $this->message(
-                'discord-blockipcomplete', $actor, $this->userLink($data['target']),
+                'novawebhook-blockipcomplete', $actor, $this->userLink($data['target']),
                 $reason, $this->expiryText($data['expiry'])
             ),
             'UnblockUserComplete' => $this->message(
-                'discord-unblockusercomplete', $actor, $this->userLink($data['target'])
+                'novawebhook-unblockusercomplete', $actor, $this->userLink($data['target'])
             ),
             'UserGroupsChanged' => $this->message(
-                'discord-usergroupschanged', $actor, $this->userLink($data['target']), $reason,
+                'novawebhook-usergroupschanged', $actor, $this->userLink($data['target']), $reason,
                 $data['added'] ? '+ ' . implode(', ', $data['added']) : '',
                 $data['removed'] ? '- ' . implode(', ', $data['removed']) : ''
             ),
             'UploadComplete' => $this->message(
-                'discord-uploadcomplete', $actor, $data['reupload'] ? $this->message('discord-uploadnewver') : '',
+                'novawebhook-uploadcomplete', $actor, $data['reupload'] ? $this->message('novawebhook-uploadnewver') : '',
                 $this->link($data['filename'], $pageData['url'] ?? ''), $this->formatMessage($data['comment']),
                 $this->formatBytes($data['size']), $data['width'], $data['height'], $data['mime_type']
             ),
             'FileDeleteComplete' => $this->message(
-                'discord-filedeletecomplete', $actor, $this->link($data['filename'], $pageData['url'] ?? ''), $reason
+                'novawebhook-filedeletecomplete', $actor, $this->link($data['filename'], $pageData['url'] ?? ''), $reason
             ),
-            'FileUndeleteComplete' => $this->message('discord-fileundeletecomplete', $actor, $page, $reason),
+            'FileUndeleteComplete' => $this->message('novawebhook-fileundeletecomplete', $actor, $page, $reason),
             'RenameUserComplete' => $this->message(
-                'discord-renameusercomplete', $actor, '*' . $data['old_name'] . '*',
+                'novawebhook-renameusercomplete', $actor, '*' . $data['old_name'] . '*',
                 $this->link($data['new_name'], $data['new_user_url'])
             ),
             'LogException' => '[' . $data['class'] . '] ' . $data['detail'],
@@ -91,28 +91,28 @@ final class DiscordRenderer {
 
     private function userLink(array $user): string {
         if ($user['url'] === null) {
-            return $this->message('discord-userlinks', $user['name'], 'n/a', 'n/a');
+            return $this->message('novawebhook-userlinks', $user['name'], 'n/a', 'n/a');
         }
         return $this->message(
-            'discord-userlinks', $this->link($this->truncate($user['name'], 25), $user['url']),
-            $this->link($this->message('discord-talk'), $user['talk_url']),
-            $this->link($this->message('discord-contribs'), $user['contributions_url'])
+            'novawebhook-userlinks', $this->link($this->truncate($user['name'], 25), $user['url']),
+            $this->link($this->message('novawebhook-talk'), $user['talk_url']),
+            $this->link($this->message('novawebhook-contribs'), $user['contributions_url'])
         );
     }
 
     private function revisionText(array $revision): string {
         return $this->message(
-            'discord-revisionlinks', $this->link($this->message('discord-diff'), $revision['url']),
-            $revision['minor'] ? $this->message('discord-minor') : '',
+            'novawebhook-revisionlinks', $this->link($this->message('novawebhook-diff'), $revision['url']),
+            $revision['minor'] ? $this->message('novawebhook-minor') : '',
             $this->message(
-                'discord-size', $revision['delta'] === null ? (string)$revision['size'] : sprintf('%+d', $revision['delta'])
+                'novawebhook-size', $revision['delta'] === null ? (string)$revision['size'] : sprintf('%+d', $revision['delta'])
             )
         );
     }
 
     private function expiryText(string $expiry): string {
         $time = strtotime($expiry);
-        return $time ? date($this->message('discord-blocktimeformat'), $time) : $expiry;
+        return $time ? date($this->message('novawebhook-blocktimeformat'), $time) : $expiry;
     }
 
     private function truncate(string $text, int $length): string {
