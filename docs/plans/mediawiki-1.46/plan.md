@@ -113,4 +113,4 @@ Write an explicit old-to-new configuration map. Default migration policy: canoni
 | 2 - bounded modernization | closed in 9ceec2d |
 | 3 - structured events and dual webhook formats | closed in f371d8b |
 | 4 - novawebhook rebrand and migration | closed in 1ef2ba4 |
-| 5 - release readiness and documentation | verified, uncommitted |
+| 5 - release readiness and documentation | closed in 3aeac8e |

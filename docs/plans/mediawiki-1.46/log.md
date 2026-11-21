@@ -115,3 +115,7 @@ composer check now passes: PHP parallel lint (40 files), PHP_CodeSniffer (zero e
 - Reviewed complete change scope from bda6659 plus final working diff: correctness, config precedence and null/default handling, rendering/data separation, serializer privacy, error paths, hook registration, documentation, and style. No blockers or unresolved important findings remain; ready to close
 - Manifest/config/localization/message/link checks and zsh syntax passed. Confirmed REL1_44 still equals trunk at f5da866; no remote refs, packages, tags, Discord requests, or deployment were changed
 - ship.md records the local ship verdict, exact evidence, runtime/browser limits, and deferred scope. Plan stays at its original path; this repository has no established plan archive convention
+
+## 2026-11-21 - plan closed
+
+Final content and readiness report committed in 3aeac8e; lint housekeeping is 824392c. All six phases are verified and closed in their recorded content commits. REL1_46 remains local, with no merge/push/publication/deployment. No plan archive convention exists, so records remain in docs/plans/mediawiki-1.46/.
