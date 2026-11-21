@@ -20,9 +20,9 @@ rules belong here; reuse installed global skills for reusable procedures.
 
 ## project and architecture
 
-NovaWebhook is an MIT-licensed PHP MediaWiki extension that sends Discord messages and structured JSON webhook
-notifications for wiki events. The development container uses PHP 8.4 and MediaWiki
-REL1_46; the manifest requires MediaWiki >= 1.46.0. Read the current version and
+NovaWebhook is an MIT-licensed PHP MediaWiki extension that sends Discord messages
+and structured JSON webhook notifications for wiki events. The development
+container uses PHP 8.4 and MediaWiki REL1_46; the manifest requires MediaWiki >= 1.46.0. Read the current version and
 configuration defaults from the NovaWebhookConfigDefaults attribute in
 [extension.json](extension.json). Defaults are resolved after explicit canonical
 and legacy settings so false, null, and empty arrays preserve precedence.
@@ -56,8 +56,10 @@ and legacy settings so false, null, and empty arrays preserve precedence.
 - Encode payloads with `JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE |
   JSON_UNESCAPED_SLASHES`. Sanitize diff text with
   `mb_convert_encoding(..., 'UTF-8', 'UTF-8')`.
-- Prefer the actual revision, block, or file timestamp. Use `time()` only when the
-  hook supplies no event timestamp.
+- Prefer the operation timestamp supplied by the hook, including ManualLogEntry
+  timestamps for deletion/restoration. Use revision, block, or file timestamps
+  only when they describe that event; use callback time when no event time is
+  supplied.
 - Implement MediaWiki hook interfaces. Call `isEnabled()` before work in event
   handlers that use the shared filters.
 - Use `EditResult::isNullEdit()` for `NovaWebhookNoNull`; a size comparison is insufficient.
@@ -93,7 +95,9 @@ suite. Without host Composer, its equivalent is:
 docker compose --file .dev/docker-compose.yml run --build --quiet-build --rm --remove-orphans job-tests
 ```
 
-The container installs MediaWiki and uses MariaDB. Integration tests replace
+The container installs MediaWiki and uses MariaDB. Core owns PHPUnit 9.6;
+the extension dev install supplies lint/Phan tools. Phan targets PHP 8.3 and uses
+its supported parser fallback when php-ast is unavailable. Integration tests replace
 `HttpRequestFactory` with [MockRequestFactory](tests/doubles/MockRequestFactory.php)
 through [NovaWebhookIntegrationTestCase](tests/phpunit/integration/NovaWebhookIntegrationTestCase.php).
 Inspect current tests for coverage; skipped stubs are not verified behavior.

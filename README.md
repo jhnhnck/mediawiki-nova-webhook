@@ -1,176 +1,109 @@
 # NovaWebhook
 
-A MediaWiki extension for sending wiki events to Discord and structured JSON webhook receivers. When certain events occur on your wiki, such as new edits, alerts can be sent as messages to a Discord channel via a webhook.
+NovaWebhook sends MediaWiki events to Discord and structured JSON webhook receivers. Handlers collect event data once; the Discord renderer turns that data into localized messages. Each endpoint selects its format and hook subscriptions.
 
-Live demo: <https://attuproject.org> ([Discord](https://links.attuproject.org/invite)|[Config](/jhnhnck/attu-wiki))
+Existing NovaDiscord installations should follow the [migration guide](docs/migration-novawebhook.md). The Git repository URL remains unchanged.
 
-<!-- TODO: new example image
-<p align="center">
-  <img src="https://i.imgur.com/tCehglJ.png" alt="Example"/>
-</p>
--->
+## requirements
 
-See the [NovaDiscord migration guide](docs/migration-novawebhook.md) for existing installations.
+- MediaWiki 1.46 or later, with PHP 8.3 or later as required by core
+- An HTTPS receiver URL; Discord messages require a [Discord webhook URL](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks)
+- APCu when enabling private exception notifications, for fingerprint rate limiting
 
-## Requirements
+Use `REL1_46` for NovaWebhook 4.0.0. `REL1_44` retains the NovaDiscord baseline for older installations. Development and integration verification use PHP 8.4 with MediaWiki REL1_46.
 
-- **Webhook URL**: This can be obtained within the "Edit Channel" menu under "Integrations". You can find more [detailed instructions here](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks).
-- **MediaWiki**: This extension aims to always support the [latest LTS release](https://www.mediawiki.org/wiki/Version_lifecycle).
-  - Use the branch that is equal to or below your version. For example, if you are using MediaWiki 1.44, use the `REL1_44` branch.
-  - There is no guarantee of support for versions of MediaWiki that are considered end-of-life.
-  - The `trunk` branch may contain changes that are only applicable to the cutting-edge alpha version of MediaWiki.
+## installation
 
-No extra dependencies are required. **APCu** is required if enabling `$wgNovaWebhookPrivateExceptionAlerts` (used for rate limiting duplicate alerts).
+Clone the release branch into the MediaWiki extensions directory:
 
-## Installation
-
-1. Clone this repository to your MediaWiki installation's `extensions` folder:
-
-```bash
-git clone --depth=1 --branch 'REL1_46' https://github.com/jhnhnck/mediawiki-extensions-NovaDiscord ./extensions/NovaWebhook;
+```sh
+git clone --depth=1 --branch REL1_46 https://github.com/jhnhnck/mediawiki-extensions-NovaDiscord extensions/NovaWebhook
 ```
 
-1. Configure the extension within your `LocalSettings.php` file:
+Configure LocalSettings.php:
 
 ```php
-// Load the extension
 wfLoadExtension('NovaWebhook');
-
-// Set the webhook URL(s)
 $wgNovaWebhookEndpoints = [
     ['url' => 'https://discord.com/api/webhooks/...'],
+    ['url' => 'https://receiver.example.org/events', 'format' => 'json'],
 ];
 ```
 
-## Configuration
+## configuration
 
-This extension can be configured using the `LocalSettings.php` file in your MediaWiki installation. Only `$wgNovaWebhookEndpoints` is required; all other settings are optional.
-
-### Webhooks
-
-| Variable | Type | Description | Default |
+| setting | type | effective default | behavior |
 | --- | --- | --- | --- |
-| `$wgNovaWebhookEndpoints` **(required)** | array | List of webhook configurations. Each entry must have a `url` key and an optional `hooks` key (see below). | `[]` |
-| `$wgNovaWebhookDefaultHooks` | array\|null | Default set of hook names enabled for webhooks that do not specify their own `hooks` key. `null` means all hooks are enabled. | `null` |
+| `$wgNovaWebhookEndpoints` | array | `[]` | Destination entries; an empty list disables delivery |
+| `$wgNovaWebhookDefaultHooks` | array or null | `null` | Default subscriptions; null selects all ordinary hooks, excluding LogException |
+| `$wgNovaWebhookNoBots` | bool | `true` | Suppress bot actions |
+| `$wgNovaWebhookNoMinor` | bool | `false` | Suppress minor page edits |
+| `$wgNovaWebhookNoNull` | bool | `true` | Suppress null edits using EditResult |
+| `$wgNovaWebhookDisabledNS` | array of integers | `[]` | Namespace IDs to exclude |
+| `$wgNovaWebhookDisabledUsers` | array of strings | `["Redirect fixer"]` | Performing users to exclude |
+| `$wgNovaWebhookMaxChars` | int | `500` | Bound Discord summaries/reasons and private exception details |
+| `$wgNovaWebhookPrivateExceptionAlerts` | bool | `false` | Opt into private exception notifications |
+| `$wgNovaWebhookExceptionDenyList` | array | `[]` | Suppress exception classes or class/message substring pairs |
 
-Each entry in `$wgNovaWebhookEndpoints` supports:
+Each endpoint accepts:
 
-- `url` *(required)*: The [Discord webhook URL](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks).
-- `hooks` *(optional)*: Array of hook names this webhook should receive. If absent, falls back to `$wgNovaWebhookDefaultHooks`.
+| field | required | behavior |
+| --- | --- | --- |
+| `url` | yes | Valid HTTPS URL |
+| `format` | no | `discord` or `json`; omitted selects Discord, invalid values skip the endpoint |
+| `hooks` | no | Array of hook names, or null for all ordinary hooks; omitted uses NovaWebhookDefaultHooks |
 
 ```php
-// Send all events to one webhook, and only page edits to another:
+$wgNovaWebhookDefaultHooks = ['PageSaveComplete', 'PageDeleteComplete'];
 $wgNovaWebhookEndpoints = [
     ['url' => 'https://discord.com/api/webhooks/...'],
-    ['url' => 'https://discord.com/api/webhooks/...', 'hooks' => ['PageSaveComplete']],
+    ['url' => 'https://receiver.example.org/edits', 'format' => 'json', 'hooks' => ['PageSaveComplete']],
 ];
-
-// Only send page saves and deletions by default (applies to all webhooks without explicit 'hooks'):
-$wgNovaWebhookDefaultHooks = ['PageSaveComplete', 'PageDeleteComplete'];
 ```
 
-### Filters
+See [event formats and JSON schema v1](docs/webhook-events.md) for the envelope, field types, timestamp sources, and delivery behavior. JSON contains raw metadata strings, without revision bodies or diffs. Discord messages disable mentions, include bounded edit diffs, and retain their 2,000-character limit. Delivery is synchronous; a failed endpoint does not prevent attempts at other endpoints, and retries are not automatic.
 
-| Variable | Type | Description | Default |
-| --- | --- | --- | --- |
-| `$wgNovaWebhookNoBots` | bool | Do not send notifications triggered by a [bot account](https://www.mediawiki.org/wiki/Manual:Bots) | `true` |
-| `$wgNovaWebhookNoMinor` | bool | Do not send notifications for [minor edits](https://www.mediawiki.org/wiki/Help:Minor_edit) | `false` |
-| `$wgNovaWebhookNoNull` | bool | Do not send notifications for [null edits](https://www.mediawiki.org/wiki/Manual:Purge#Null_edits) | `true` |
-| `$wgNovaWebhookDisabledNS` | int\|array | List of namespace **IDs** to suppress notifications for (see [below](#resources)) | `[]` |
-| `$wgNovaWebhookDisabledUsers` | string\|array | List of usernames whose actions should not trigger notifications | `["Redirect fixer"]` |
+Legacy Discord-prefixed settings remain accepted for the transition release. Explicit NovaWebhook settings take precedence, including false, null, and empty arrays; endpoint lists are never merged. See the [complete migration map](docs/migration-novawebhook.md#installation-and-configuration).
 
-### Other
+## notifications
 
-| Variable | Type | Description | Default |
-| --- | --- | --- | --- |
-| `$wgNovaWebhookMaxChars` | int | Maximum characters for user-provided text (summaries, reasons). Longer text is truncated. | `500` |
-| `$wgNovaWebhookPrivateExceptionAlerts` | bool | Send a webhook alert when an unhandled PHP exception is logged; rate-limited to one alert per exception fingerprint per 5 minutes (requires APCu); user-facing errors are filtered out | `false` |
-
-## Hooks used
-
-Each webhook entry may select `format => 'discord'` (the default) or `format => 'json'`.
-JSON receivers get versioned event metadata; Discord messages are rendered from the same event data.
-See [webhook formats and schema v1](docs/webhook-events.md) for configuration and field definitions.
-
-- `PageDeleteComplete` - Page deletions
-- `PageMoveComplete` - Page moves
-- `PageSaveComplete` - New edits to pages and page creations
-- `PageUndeleteComplete` - Page restorations
-- `AfterImportPage` - Page was imported
-- `ArticleMergeComplete` - Article histories were merged
-- `ArticleProtectComplete` - Page protections
-- `ArticleRevisionVisibilitySet` - Revision visibility changes
-- `BlockIpComplete` - User blocked
-- `FileDeleteComplete` - File revision was deleted
-- `FileUndeleteComplete` - File revision was restored
-- `LocalUserCreated` - User registrations
-- `UnblockUserComplete` - User unblocked
-- `UploadComplete` - File was uploaded
-- `UserGroupsChanged` - User rights changed
-
-### [Renameuser](https://www.mediawiki.org/wiki/Extension:Renameuser)
-
-- `RenameUserComplete` - Rename was completed
-
-### Exception Alerting (opt-in)
-
-- `LogException` - Unhandled PHP exception; requires `$wgNovaWebhookPrivateExceptionAlerts = true`
-
-## Resources
-
-As we use Namespace IDs, the following resources might be helpful:
-
-- [Built in namespaces' IDs](https://www.mediawiki.org/wiki/Manual:Namespace#Built-in_namespaces)
-- [Extension default namespaces](https://www.mediawiki.org/wiki/Extension_default_namespaces)
-
-<!--
-## Translation
-
-You can submit translations for this extension on [Translatewiki.net](https://translatewiki.net/wiki/Special:Translate/mwgithub-mw-discord).
--->
-
-## Development
-
-### Running Test Cases
-
-Run with `composer test` or the following if you don't have composer installed. (Docker required)
-
-```zsh
-docker compose --file .dev/docker-compose.yml run --build --quiet-build --rm --remove-orphans job-tests
-```
-
-| Script | Description |
+| hooks | events |
 | --- | --- |
-| `composer test` | Run tests, filtering noisy log output |
-| `composer test-all` | Run tests with unfiltered output (`--all`) |
-| `composer test-stop` | Run tests, stopping on first defect (`--stop`) |
+| PageSaveComplete | Page creation and edits; file namespace saves excluded |
+| PageDeleteComplete, PageMoveComplete, PageUndeleteComplete | Page deletion, movement, and restoration |
+| ArticleRevisionVisibilitySet, ArticleProtectComplete | Revision visibility and page protection changes |
+| AfterImportPage, ArticleMergeComplete | Imports and history merges |
+| LocalUserCreated, RenameUserComplete | Account creation and core user renames |
+| BlockIpComplete, UnblockUserComplete, UserGroupsChanged | Blocks, unblocks, and manual group changes |
+| UploadComplete, FileDeleteComplete, FileUndeleteComplete | Uploads and file-version deletion/restoration |
+| LogException | Private exception notifications, explicitly selected and opted into |
 
-### Test Coverage
+Whole-file deletion uses the page-deletion notification. Restoring a page and its file versions produces separate page and file events. A history merge may also produce a redirect edit. Automatic group changes remain silent.
 
-Integration tests are available for these hooks:
+Exception endpoints require both `$wgNovaWebhookPrivateExceptionAlerts = true` and explicit LogException selection. The deny-list accepts class names or arrays with `class` and optional case-sensitive `messageContains`. Suppressed and expected navigation errors are excluded; duplicate fingerprints are limited to one event per five minutes through APCu. Exception delivery errors remain quiet to avoid feedback loops.
 
-- `ArticleProtectComplete` - Page protection webhook notifications
-- `ArticleRevisionVisibilitySet` - Revision visibility change webhook notifications
-- `BlockIpComplete` - User blocking webhook notifications
-- `LocalUserCreated` - User registration webhook notifications
-- `PageDeleteComplete` - Page deletion webhook notifications
-- `PageMoveComplete` - Page move webhook notifications
-- `PageSaveComplete` - Edit and page creation webhook notifications
-- `PageUndeleteComplete` - Page restoration webhook notifications
-- `UnblockUserComplete` - User unblocking webhook notifications
+## development
 
-These hooks are not currently tested due to technical limitations:
+The integration suite installs MediaWiki and MariaDB in Docker Compose and replaces HttpRequestFactory with an in-memory double. It exercises all 17 registered hooks and both serializers without contacting Discord. It also covers configuration migration, filters, destination failures, and exception safeguards. Skipped tests do not count as verified behavior.
 
-- `AfterImportPage` - Requires XML import infrastructure, complex setup
-- `ArticleMergeComplete` - Requires MergeHistory functionality, complex setup
-- `FileDeleteComplete` - Requires file upload infrastructure
-- `FileUndeleteComplete` - Requires file upload infrastructure
-- `RenameUserComplete` - Requires Renameuser extension
-- `UploadComplete` - Requires file upload infrastructure
-- `UserGroupsChanged` - Requires complex setup to trigger with proper performer context
+| command | purpose |
+| --- | --- |
+| `composer test` | Build and run integration tests with filtered output |
+| `composer test-all` | Run the suite with unfiltered output |
+| `composer test-stop` | Stop on the first failure |
+| `composer check` | PHP lint, codesniffer, and executable-file checks |
+| `composer phan` | Static analysis; supported parser fallback works without php-ast |
 
-## License
+Without host Composer:
 
-This extension is available under the MIT license. You can [see here](LICENSE) for more information.
+```sh
+docker compose --file .dev/docker-compose.yml run --build --quiet-build --rm --remove-orphans job-tests zsh ./entry.zsh --all
+```
 
-This extension was based off the work of jayktaylor's [mw-discord](https://github.com/jayktaylor/mw-discord) project.
+Core owns the integration PHPUnit installation and generates its local configuration. The extension's development dependencies provide lint and static-analysis tools; its empty standalone bootstrap is not a MediaWiki integration environment. Install those dependencies with Composer before linting, and set `MW_INSTALL_PATH` to a matching core checkout when running Phan outside the test container. Phan targets PHP 8.3; runtime tests use PHP 8.4.
+
+Defaults and descriptions live under `attributes.NovaWebhook.ConfigDefaults` in extension.json. `NovaWebhook.Config` resolves explicit canonical and legacy settings before applying those defaults into ServiceOptions. Unset extension settings are not exported as main-config globals during the transition. See [AGENTS.md](AGENTS.md) for project workflow and verification requirements.
+
+## license
+
+NovaWebhook is [MIT licensed](LICENSE) and is based on jayktaylor's [mw-discord](https://github.com/jayktaylor/mw-discord).

@@ -2,7 +2,7 @@
 
 ## goals
 
-- Run NovaDiscord's registered notifications on MediaWiki REL1_46 with verified payloads and no unintended duplicate delivery
+- Run the extension's registered notifications on MediaWiki REL1_46 with verified payloads and no unintended duplicate delivery
 - Replace deprecated hook interface imports, establish real coverage for the seven skipped hook tests, and preserve routing and exception safeguards
 - Reduce unnecessary page construction, revision lookups, and file history queries where source evidence supports the change
 - Build one structured event model per notification and render Discord messages from that data; offer a versioned JSON payload per destination
@@ -23,7 +23,7 @@
 - Implementation belongs on REL1_46; REL1_44 and trunk were equal at `f5da86625a8d2f8ac0fe52549979e3e19643d1cc` before this planning commit
 - Preserve the existing plan path and historical compatibility report through the NovaWebhook rename
 - Branch synchronization is local. No remote refs were pushed; remote trunk and REL1_44 were both `c714dc9` when fetched
-- Follow AGENTS.md, constructor injection, NovaDiscordConfig routing, HTTPS validation, payload encoding, bot/minor/null/namespace filters, file-save handling, and exception privacy/rate limiting
+- Follow AGENTS.md, constructor injection, NovaWebhook.Config routing, HTTPS validation, payload encoding, bot/minor/null/namespace filters, file-save handling, and exception privacy/rate limiting
 - Use the in-memory HTTP double. Interacting with Discord requires separate user authorization
 - Core source snapshots and the full hook inventory are recorded in [compatibility.md](compatibility.md); refresh that evidence if core revisions change
 - PHP 8.4 remains the default container runtime; target core requires PHP >=8.3.0. Do not infer minimum-runtime coverage from a PHP 8.4 run
@@ -113,4 +113,4 @@ Write an explicit old-to-new configuration map. Default migration policy: canoni
 | 2 - bounded modernization | closed in 9ceec2d |
 | 3 - structured events and dual webhook formats | closed in f371d8b |
 | 4 - novawebhook rebrand and migration | closed in 1ef2ba4 |
-| 5 - release readiness and documentation | in progress |
+| 5 - release readiness and documentation | verified, uncommitted |

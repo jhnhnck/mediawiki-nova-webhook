@@ -1,4 +1,4 @@
-# NovaDiscord to-do list
+# NovaWebhook to-do list
 
 _see the [meta](#meta) section at the end of this file for format reference._
 
@@ -8,20 +8,12 @@ _see the [meta](#meta) section at the end of this file for format reference._
 
 ### code
 
-- ⭕ `low priority` `medium effort` investigate removing `Title` factory call in `PageDeleteComplete` handler if MW API allows (`includes/PageAlert.php:117`)
-- ⭕ `low priority` `low effort` include `$restoredRevisionCount` in page undelete message (`includes/PageAlert.php:203`)
-- ⭕ `low priority` `medium effort` simplify delta retrieval in `getDiffBlock` (`includes/DiscordAlert.php:188`)
-- ⭕ `low priority` `low effort` finalize invalid chars list in `formatMessage` (`includes/DiscordAlert.php:162`)
-
-### tests
-
-- ⭕ `medium priority` `medium effort` write proper UserGroupsChanged integration test; requires complex setup to trigger hook with valid performer (`tests/phpunit/integration/UserGroupsChangedHookTest.php:15`)
-- ⭕ `low priority` `low effort` add test for restoring specific revisions in PageUndeleteComplete (`tests/phpunit/integration/PageUndeleteCompleteHookTest.php:12`)
-- ⭕ `low priority` `high effort` implement stub-only tests: AfterImportPage, ArticleMergeComplete, FileDeleteComplete, FileUndeleteComplete, UploadComplete, RenameUserComplete
+- ⭕ `low priority` `low effort` include restored revision count in the Discord undelete message; JSON already includes it (`includes/DiscordRenderer.php`)
+- ⭕ `low priority` `low effort` finalize invalid chars list in `DiscordRenderer::formatMessage` (`includes/DiscordRenderer.php`)
 
 ### docs
 
-- ⭕ `low priority` `low effort` add new example image to README (`README.md:7`)
+- ⭕ `low priority` `low effort` add new example image to README (`README.md`)
 
 ### meta
 
@@ -30,6 +22,17 @@ _see the [meta](#meta) section at the end of this file for format reference._
 ---
 
 ## completed
+
+### code
+
+- 🔴 `21 November 2026` deletion/restoration build Title directly from PageIdentity without constructing a WikiPage; Title remains necessary for canonical URLs
+- 🔴 `21 November 2026` parent revision is retrieved once for size metadata and bounded edit diff generation
+
+### tests
+
+- 🔴 `21 November 2026` UserGroupsChanged integration coverage uses UserGroupAssignmentService and verifies automatic changes remain silent
+- 🔴 `21 November 2026` selected revision restoration verifies the JSON revision count
+- 🔴 `21 November 2026` all six former stub-only hook tests execute real MediaWiki operations with both serializers
 
 ---
 
@@ -60,6 +63,6 @@ when adding a new item, sort it into the appropriate section by topic, or add a 
 ### metadata
 
 ```yaml
-last_updated: 30 March 2026
-total_completed: 0
+last_updated: 21 November 2026
+total_completed: 5
 ```

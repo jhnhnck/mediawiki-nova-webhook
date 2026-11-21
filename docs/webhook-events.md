@@ -47,7 +47,7 @@ Discord endpoints receive the existing `content` and `allowed_mentions` envelope
 }
 ```
 
-The envelope has the same eight fields for every event. `schema_version` is integer 1; `event`, `hook`, and `timestamp` are strings. Time is UTC RFC 3339 with second precision. `actor` is null for exceptions; `page` is null for user and exception events. IDs are integers; a non-user block target uses a null ID and null links, and anonymous user ID is 0. Deleted-page IDs preserve the identity supplied by the hook. A revision's delta is null when no parent is available. `data` contains the fields below; consumers should tolerate additional fields within schema version 1. Breaking field/type/semantic changes require a new version.
+The envelope has the same seven fields for every event. `schema_version` is integer 1; `event`, `hook`, and `timestamp` are strings. Time is UTC RFC 3339 with second precision. `actor` is null for exceptions; `page` is null for user and exception events. IDs are integers; a non-user block target uses a null ID and null links, and anonymous user ID is 0. Deleted-page IDs preserve the identity supplied by the hook. A revision's delta is null when no parent is available. `data` contains the fields below; consumers should tolerate additional fields within schema version 1. Breaking field/type/semantic changes require a new version.
 
 ## event data
 

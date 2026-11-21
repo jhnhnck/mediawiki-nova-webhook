@@ -104,3 +104,14 @@ Parent 1ef2ba4 on REL1_46. Resolve B001 separately, finalize public requirements
 ## 2026-11-21 - phase 5 lint housekeeping verification
 
 composer check now passes: PHP parallel lint (40 files), PHP_CodeSniffer (zero errors/warnings), and minus-x. Corrected inherited hook documentation, imports/whitespace, typed test-double property, and wrapped exact wire-payload fixtures. Canonical integration suite remains 71 tests / 504 assertions / zero skips (/tmp/nova-lint-tests.log). The format-only diff was reviewed separately from release metadata and documentation. B001 is resolved with this verification; preserve a separate housekeeping commit.
+
+## 2026-11-21 - phase 5 verification and final review
+
+- Selected NovaWebhook 4.0.0 for the breaking loading identity, namespace, and service changes; manifest requires MediaWiki >=1.46.0 and Composer requires PHP >=8.3.0
+- Final fresh-image command passed: 73 tests / 523 assertions / zero skips, PHP 8.4.28, MediaWiki d88c752 (1.46.3), core PHPUnit 9.6.34. Final canonical and legacy-only mounted runs each passed the same totals
+- composer check passed all 40 PHP files, codesniffer, and minus-x. composer phan passed using the configured parser fallback with PHP 8.3 target; no actual PHP 8.3 runtime matrix was run
+- Final coverage adds selected-revision restoration/count and disabled-user filtering. Existing truncation test already covered fenced diff truncation; a duplicate introduced during final test editing was removed before verification
+- Separate lint housekeeping commit 824392c resolves B001. README, migration guide, schema v1, AGENTS runtime/config guidance, and the active backlog now agree. Five existing backlog entries moved to completed; Discord undelete count presentation remains open because its payload was intentionally preserved
+- Reviewed complete change scope from bda6659 plus final working diff: correctness, config precedence and null/default handling, rendering/data separation, serializer privacy, error paths, hook registration, documentation, and style. No blockers or unresolved important findings remain; ready to close
+- Manifest/config/localization/message/link checks and zsh syntax passed. Confirmed REL1_44 still equals trunk at f5da866; no remote refs, packages, tags, Discord requests, or deployment were changed
+- ship.md records the local ship verdict, exact evidence, runtime/browser limits, and deferred scope. Plan stays at its original path; this repository has no established plan archive convention

@@ -38,6 +38,14 @@ class NotificationFiltersTest extends NovaWebhookIntegrationTestCase {
         $this->assertCount(0, $this->getDiscordRequests());
     }
 
+    public function testDisabledUserStaysSilent(): void {
+        $this->overrideConfigValue('NovaWebhookDisabledUsers', ['Nova Disabled User']);
+        $user = $this->getServiceContainer()->getUserFactory()->newFromName('Nova Disabled User');
+        $this->assertStatusGood($user->addToDatabase());
+        $this->assertStatusGood($this->editPage('NovaUserFilter', 'Content', '', 0, $user));
+        $this->assertCount(0, $this->mockHttpFactory->getCaptured());
+    }
+
     public function testMinorEditFilter(): void {
         $this->overrideConfigValue('NovaWebhookNoMinor', true);
         $page = $this->getExistingTestPage('NovaMinorFilter');
